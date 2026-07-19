@@ -71,12 +71,16 @@ export default async function Page() {
       acts: ["coletando STATUS", "consolidando sinais", "montando briefing", "em vigília"] },
   ];
 
-  const ing = run("licita360", "ingestao"), ed = run("licita360", "editais");
+  const ing = run("licita360", "ingestao"), ed = run("licita360", "editais"), sd = run("licita360", "saude");
   const licitaUnits: Unit[] = [
     { key: "lic-ing", code: "IG", name: "Coleta / Ingestão", role: "Vigia o cron do PNCP", autonomy: "ATIVO",
       state: ing?.status === "FAIL" ? "alerta" : ing ? "vigiando" : "ocioso",
       accent: ing?.status === "FAIL" ? "danger" : "cyan", pending: pendBy("Coleta / Ingestão"),
       last: ing?.summary ?? "sem sinal", acts: ["lendo log de coletas", "conferindo frescor do PNCP", "checando erros", "aguardando ciclo"] },
+    { key: "lic-saude", code: "DB", name: "Saúde do banco", role: "Controla o Neon do Licita360", autonomy: "ATIVO",
+      state: sd?.status === "FAIL" || sd?.status === "WARN" ? "alerta" : sd ? "vigiando" : "ocioso",
+      accent: sd?.status === "FAIL" ? "danger" : "mint", pending: pendBy("Saúde do banco"),
+      last: sd?.summary ?? "3,2M licitações", acts: ["contando o total de licitações", "medindo crescimento 24h", "checando fontes paradas", "aguardando ciclo"] },
     { key: "lic-radar", code: "RD", name: "Radar de oportunidades", role: "Caça licitações de educação", autonomy: "APRENDIZ",
       state: pendBy("Radar de oportunidades") ? "aguardando" : "vigiando", accent: "mint", pending: pendBy("Radar de oportunidades"),
       last: "oportunidades", acts: ["varrendo 3,2M licitações", "filtrando temas i10 (FUNDEB/educação)", "medindo valor e prazo", "aguardando seu OK"] },
