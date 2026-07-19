@@ -9,6 +9,9 @@ export const dynamic = "force-dynamic";
 type Item = {
   agent?: string; kind?: string; channel?: string; title?: string;
   target?: string; reason?: string; message?: string; ext_key?: string;
+  // metadados de envio real (opcionais) — preenchidos por agentes que enviam
+  send_to?: string; send_conv_id?: number; send_template?: string;
+  send_vars?: Record<string, string>;
 };
 const valid = (i: Item) =>
   typeof i?.agent === "string" && typeof i?.title === "string" &&
@@ -30,9 +33,13 @@ export async function POST(request: Request) {
   let inserted = 0;
   for (const i of ok) {
     const r = await sql`
-      INSERT INTO reserva.agent_approvals (agent, kind, channel, title, target, reason, message, ext_key)
+      INSERT INTO reserva.agent_approvals
+        (agent, kind, channel, title, target, reason, message, ext_key,
+         send_to, send_conv_id, send_template, send_vars)
       VALUES (${i.agent!}, ${i.kind!}, ${i.channel ?? null}, ${i.title!},
-              ${i.target ?? null}, ${i.reason ?? null}, ${i.message ?? null}, ${i.ext_key ?? null})
+              ${i.target ?? null}, ${i.reason ?? null}, ${i.message ?? null}, ${i.ext_key ?? null},
+              ${i.send_to ?? null}, ${i.send_conv_id ?? null}, ${i.send_template ?? null},
+              ${i.send_vars ? JSON.stringify(i.send_vars) : null})
       ON CONFLICT (ext_key) WHERE status = 'pending' DO NOTHING
       RETURNING id
     `;
