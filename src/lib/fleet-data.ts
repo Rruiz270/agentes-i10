@@ -22,6 +22,19 @@ export function timeAgo(ts: string): string {
   return `${Math.round(s / 86400)} d`;
 }
 
+export type Insights = {
+  trends: { mes: string; n: number }[];
+  valor: { licitacoes: number; total_milhoes: number; media: number };
+  ranking: { orgao: string; uf: string; n: number }[];
+  concorrencia: { fornecedor: string; contratos: number; milhoes: number }[];
+  updated: string;
+} | null;
+
+export async function loadInsights(projeto: string): Promise<Insights> {
+  const rows = (await sql`SELECT data FROM reserva.project_insights WHERE projeto = ${projeto}`) as { data: Insights }[];
+  return rows[0]?.data ?? null;
+}
+
 export async function loadAll() {
   const board = (await sql`
     SELECT DISTINCT ON (projeto, tarefa) projeto, tarefa, status, summary, host, ts
