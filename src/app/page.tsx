@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser, canSeeAgentes } from "@/lib/auth";
 import { logout } from "./actions";
@@ -32,7 +33,7 @@ export default async function Hub() {
 
       <div className="hub-tiles">
         {tiles.map((s) => (
-          <a className={`hub-tile st-${s.status}`} href={s.href} key={s.key}>
+          <Link className={`hub-tile st-${s.status}`} href={s.href} key={s.key}>
             <div className="hub-tile-top">
               <span className="hub-code">{s.code}</span>
               <div className="hub-id">
@@ -59,7 +60,7 @@ export default async function Hub() {
             </div>
 
             <div className="hub-cta">Abrir centro de comando →</div>
-          </a>
+          </Link>
         ))}
       </div>
 

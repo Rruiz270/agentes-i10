@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser, canSeeAgentes } from "@/lib/auth";
 import { logout } from "../actions";
@@ -24,7 +25,7 @@ export default async function CrmPage() {
   return (
     <main className="ccwrap">
       <div className="cc-logout-bar">
-        <a className="cc-back" href="/">← projetos</a>
+        <Link className="cc-back" href="/">← projetos</Link>
         <form action={logout}><button className="cc-logout" type="submit">encerrar sessão · {me.name}</button></form>
       </div>
       <CommandCenter fleets={fleets} tel={telFor(feed, PROJS)} online={units.length} fails={fails} pending={appr.length} lastAgo={lastAgo} />
