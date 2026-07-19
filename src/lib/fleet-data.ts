@@ -26,7 +26,7 @@ export type Insights = {
   trends: { mes: string; n: number }[];
   valor: { licitacoes: number; total_milhoes: number; media: number };
   ranking: { orgao: string; uf: string; n: number }[];
-  concorrencia: { fornecedor: string; contratos: number; milhoes: number }[];
+  concorrencia: { fornecedor: string; contratos: number; total: number }[];
   updated: string;
 } | null;
 

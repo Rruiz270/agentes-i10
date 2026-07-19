@@ -1,6 +1,12 @@
 import type { Insights } from "@/lib/fleet-data";
 
 const fmtMi = (mi: number) => (mi >= 1000 ? `R$ ${(mi / 1000).toFixed(1)} bi` : `R$ ${mi} mi`);
+const fmtReais = (v: number) => {
+  if (v >= 1e9) return `R$ ${(v / 1e9).toFixed(1)} bi`;
+  if (v >= 1e6) return `R$ ${(v / 1e6).toFixed(1)} mi`;
+  if (v >= 1e3) return `R$ ${Math.round(v / 1e3)} mil`;
+  return `R$ ${Math.round(v)}`;
+};
 const mesLabel = (m: string) => {
   const [, mm] = m.split("-");
   return ["", "jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"][Number(mm)] ?? m;
@@ -65,7 +71,7 @@ export default function InsightsPanels({ ins }: { ins: Insights }) {
               <div className="iq-row" key={i}>
                 <span className="iq-rank">{i + 1}</span>
                 <span className="iq-name">{c.fornecedor}</span>
-                <span className="iq-val">{c.contratos} contrato{c.contratos > 1 ? "s" : ""} · {fmtMi(c.milhoes)}</span>
+                <span className="iq-val">{fmtReais(c.total)} · {c.contratos} contratos</span>
               </div>
             ))}
           </div>
