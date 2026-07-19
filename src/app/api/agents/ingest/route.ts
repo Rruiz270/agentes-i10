@@ -39,14 +39,22 @@ export async function POST(request: Request) {
   const ok = runs.filter(valid);
   if (!ok.length) return Response.json({ error: "nenhuma run válida" }, { status: 400 });
 
-  for (const r of ok) {
-    await sql`
-      INSERT INTO reserva.agent_runs (ts, host, projeto, tarefa, status, summary, checks)
-      VALUES (
-        ${r.ts ?? new Date().toISOString()}, ${r.host ?? null}, ${r.projeto!},
-        ${r.tarefa!}, ${r.status!}, ${r.summary ?? null}, ${JSON.stringify(r.checks ?? [])}
-      )
-    `;
+  try {
+    for (const r of ok) {
+      await sql`
+        INSERT INTO reserva.agent_runs (ts, host, projeto, tarefa, status, summary, checks)
+        VALUES (
+          ${r.ts ?? new Date().toISOString()}, ${r.host ?? null}, ${r.projeto!},
+          ${r.tarefa!}, ${r.status!}, ${r.summary ?? null}, ${JSON.stringify(r.checks ?? [])}
+        )
+      `;
+    }
+    return Response.json({ inserted: ok.length });
+  } catch (e) {
+    return Response.json({
+      error: String(e instanceof Error ? e.message : e),
+      hasDb: !!process.env.DATABASE_URL,
+      dbLen: (process.env.DATABASE_URL || "").length,
+    }, { status: 500 });
   }
-  return Response.json({ inserted: ok.length });
 }
