@@ -2,179 +2,121 @@ import { redirect } from "next/navigation";
 import { currentUser, canSeeAgentes } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { approveApproval, rejectApproval, logout } from "./actions";
+import CommandCenter, { type Unit, type Tel } from "@/components/command-center";
 
 export const dynamic = "force-dynamic";
 
-type Run = {
-  projeto: string;
-  tarefa: string;
-  status: string;
-  summary: string | null;
-  host: string | null;
-  ts: string;
-};
+type Run = { projeto: string; tarefa: string; status: string; summary: string | null; host: string | null; ts: string };
+type Approval = { id: string; agent: string; kind: string; channel: string | null; title: string; target: string | null; reason: string | null; message: string | null };
 
-type Approval = {
-  id: string;
-  agent: string;
-  kind: string;
-  channel: string | null;
-  title: string;
-  target: string | null;
-  reason: string | null;
-  message: string | null;
-};
+const TELCLS: Record<string, string> = { PASS: "ok", WARN: "warn", FAIL: "fail", SKIP: "skip" };
 
-const META: Record<string, { cls: string; label: string }> = {
-  PASS: { cls: "ok", label: "ok" },
-  WARN: { cls: "warn", label: "aviso" },
-  FAIL: { cls: "fail", label: "falha" },
-  SKIP: { cls: "skip", label: "pulado" },
-};
-const metaOf = (s: string) => META[s?.toUpperCase()] ?? META.SKIP;
-
+function hhmm(ts: string): string {
+  try { return new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }); }
+  catch { return "--:--"; }
+}
 function timeAgo(ts: string): string {
   const s = Math.max(0, (Date.now() - new Date(ts).getTime()) / 1000);
-  if (s < 90) return `${Math.round(s)}s atrás`;
-  if (s < 5400) return `${Math.round(s / 60)} min atrás`;
-  if (s < 172800) return `${Math.round(s / 3600)} h atrás`;
-  return `${Math.round(s / 86400)} d atrás`;
+  if (s < 90) return `${Math.round(s)}s`;
+  if (s < 5400) return `${Math.round(s / 60)} min`;
+  if (s < 172800) return `${Math.round(s / 3600)} h`;
+  return `${Math.round(s / 86400)} d`;
 }
 
-export default async function AgentesPage() {
+export default async function Page() {
   const me = await currentUser();
   if (!me) redirect("/login");
   if (!canSeeAgentes(me.role)) redirect("/login");
 
   const board = (await sql`
     SELECT DISTINCT ON (projeto, tarefa) projeto, tarefa, status, summary, host, ts
-    FROM reserva.agent_runs
-    ORDER BY projeto, tarefa, ts DESC
+    FROM reserva.agent_runs ORDER BY projeto, tarefa, ts DESC
   `) as Run[];
-
   const feed = (await sql`
-    SELECT projeto, tarefa, status, summary, host, ts
-    FROM reserva.agent_runs ORDER BY ts DESC LIMIT 25
+    SELECT projeto, tarefa, status, summary, ts FROM reserva.agent_runs ORDER BY ts DESC LIMIT 14
   `) as Run[];
-
   const approvals = (await sql`
     SELECT id, agent, kind, channel, title, target, reason, message
     FROM reserva.agent_approvals WHERE status = 'pending' ORDER BY created_at
   `) as Approval[];
 
-  const fails = board.filter((r) => r.status === "FAIL").length;
-  const warns = board.filter((r) => r.status === "WARN").length;
-  const health = fails ? "fail" : warns ? "warn" : board.length ? "ok" : "skip";
-  const healthLabel = fails ? "Atenção" : warns ? "Avisos" : board.length ? "Tudo verde" : "Sem dados";
-  const lastTs = feed[0]?.ts;
+  const crmHealth = board.find((b) => b.projeto === "crm-marketing" && b.tarefa === "health");
+  const fails = board.filter((b) => b.status === "FAIL").length;
+  const pendBy = (a: string) => approvals.filter((x) => x.agent === a).length;
+  const lastAgo = feed[0] ? timeAgo(feed[0].ts) : "—";
+
+  const units: Unit[] = [
+    { key: "guardiao", code: "GD", name: "Guardião", role: "Sentinela de código do CRM",
+      autonomy: "ATIVO", state: crmHealth?.status === "FAIL" ? "alerta" : crmHealth ? "vigiando" : "ocioso",
+      accent: crmHealth?.status === "FAIL" ? "danger" : "cyan", pending: 0, last: crmHealth?.summary ?? "sem sinal ainda" },
+    { key: "cobranca", code: "CB", name: "Cobrança Interna", role: "Cobra pendências do time",
+      autonomy: "AUTÔNOMO", state: "trabalhando", accent: "mint", pending: 0, last: "lembretes enviados" },
+    { key: "leads", code: "LR", name: "Leads sem Resposta", role: "Reengaja leads no WhatsApp",
+      autonomy: "APRENDIZ", state: pendBy("Leads sem resposta") ? "aguardando" : "vigiando",
+      accent: "amber", pending: pendBy("Leads sem resposta"), last: "follow-ups preparados" },
+    { key: "higiene", code: "HF", name: "Higiene do Funil", role: "Cuida de cards órfãos",
+      autonomy: "APRENDIZ", state: pendBy("Higiene do funil") ? "aguardando" : "vigiando",
+      accent: "violet", pending: pendBy("Higiene do funil"), last: "cards órfãos detectados" },
+    { key: "pauta", code: "PM", name: "Pauta de Marketing", role: "Sugere a pauta da semana",
+      autonomy: "APRENDIZ", state: pendBy("Pauta de marketing") ? "aguardando" : "vigiando",
+      accent: "cyan", pending: pendBy("Pauta de marketing"), last: "posts sugeridos" },
+    { key: "supervisor", code: "SV", name: "Supervisor HQ", role: "Orquestra e reporta a frota",
+      autonomy: "ATIVO", state: "vigiando", accent: "mint", pending: 0, last: "briefing 08:00" },
+  ];
+
+  const tel: Tel[] = feed.map((r) => ({
+    t: hhmm(r.ts), tag: r.status, cls: TELCLS[r.status] ?? "skip",
+    text: `${r.projeto}/${r.tarefa} — ${r.summary ?? "—"}`,
+  }));
 
   return (
-    <main className="ag">
-      <div className="ag-topbar">
-        <form action={logout}>
-          <button className="ag-logout" type="submit">Sair ({me.name})</button>
-        </form>
+    <main className="ccwrap">
+      <div className="cc-logout-bar">
+        <form action={logout}><button className="cc-logout" type="submit">encerrar sessão · {me.name}</button></form>
       </div>
 
-      <h1 className="ag-h1">
-        <span className="ag-logo"><i>i</i><b>10</b></span> Central de Agentes
-      </h1>
-      <div className="ag-sub">Frota do CRM i10 · publicado ao vivo pelo Mac mini</div>
+      <CommandCenter units={units} tel={tel} online={units.length} fails={fails} pending={approvals.length} lastAgo={lastAgo} />
 
-      <div className="ag-strip">
-        <div className="ag-cell"><div className="ag-k">Estado geral</div><div className="ag-v"><span className={`ag-dot ${health}`} /> {healthLabel}</div></div>
-        <div className="ag-cell"><div className="ag-k">Tarefas monitoradas</div><div className="ag-v">{board.length}</div></div>
-        <div className="ag-cell"><div className="ag-k">Falhas agora</div><div className="ag-v" style={{ color: fails ? "var(--danger-bd)" : undefined }}>{fails}</div></div>
-        <div className="ag-cell"><div className="ag-k">Última atualização</div><div className="ag-v ag-small">{lastTs ? timeAgo(lastTs) : "—"}</div></div>
-      </div>
-
-      <h2 className="ag-h2">
-        Central de Aprovações{approvals.length ? ` · ${approvals.length} aguardando você` : ""}
-      </h2>
-      <p className="ag-note">
-        O que os agentes prepararam. Revise, edite se quiser, e aprove — nada sai sem seu OK. Aprovar
-        registra a decisão; o disparo real (WhatsApp/e-mail) entra quando os agentes forem ligados aos canais.
-      </p>
-      {approvals.length === 0 ? (
-        <div className="ag-empty">✔ Nada aguardando aprovação agora.</div>
-      ) : (
-        <div className="ag-aplist">
-          {approvals.map((a) => (
-            <form key={a.id} className={`ag-ap ${a.kind}`}>
-              <input type="hidden" name="id" value={a.id} />
-              <div className="ag-ap-h">
-                <span className="ag-ap-agent">{a.agent}</span>
-                <span className={`ag-chip ${a.kind}`}>{a.kind === "externo" ? "pra fora" : "interno"}</span>
-                {a.channel && <span className="ag-chip chan">{a.channel}</span>}
-              </div>
-              <div className="ag-ap-title">{a.title}</div>
-              {a.target && <div className="ag-ap-target">Para: {a.target}</div>}
-              {a.reason && <div className="ag-ap-reason">{a.reason}</div>}
-              <details className="ag-drawer">
-                <summary>Ver e editar a mensagem preparada</summary>
-                <textarea name="message" defaultValue={a.message ?? ""} rows={5} />
-              </details>
-              <div className="ag-ap-actions">
-                <button className="ag-btn ok" formAction={approveApproval}>
-                  {a.kind === "externo" ? "Aprovar e enviar" : "Aprovar e aplicar"}
-                </button>
-                <button className="ag-btn no" formAction={rejectApproval}>Recusar</button>
-              </div>
-            </form>
-          ))}
-        </div>
-      )}
-
-      <h2 className="ag-h2">Frota — último resultado de cada tarefa</h2>
-      {board.length === 0 ? (
-        <div className="ag-empty">Nenhuma execução publicada ainda.</div>
-      ) : (
-        <div className="ag-board">
-          {board.map((r) => {
-            const m = metaOf(r.status);
-            return (
-              <div className={`ag-card ${m.cls}`} key={`${r.projeto}/${r.tarefa}`}>
-                <div className="ag-card-h">
-                  <span className={`ag-dot ${m.cls}`} />
-                  <span className="ag-task">{r.tarefa}</span>
-                  <span className="ag-badge">{m.label}</span>
+      <section id="aprovacoes" className="ap-sec">
+        <h2 className="ap-h2">
+          <span className="ap-h2-glow" />CENTRAL DE APROVAÇÕES
+          {approvals.length ? <span className="ap-count">{approvals.length} aguardando você</span> : null}
+        </h2>
+        <p className="ap-note">
+          O que os agentes prepararam. Revise, edite, e aprove — nada sai sem seu OK. Aprovar registra a decisão;
+          o disparo real (WhatsApp/e-mail) entra quando os agentes forem ligados aos canais.
+        </p>
+        {approvals.length === 0 ? (
+          <div className="ap-empty">✓ Nenhuma ação aguardando aprovação.</div>
+        ) : (
+          <div className="ap-list">
+            {approvals.map((a) => (
+              <form key={a.id} className={`ap-card ${a.kind}`}>
+                <input type="hidden" name="id" value={a.id} />
+                <div className="ap-top">
+                  <span className="ap-agent">{a.agent}</span>
+                  <span className={`ap-chip ${a.kind}`}>{a.kind === "externo" ? "PRA FORA" : "INTERNO"}</span>
+                  {a.channel && <span className="ap-chip chan">{a.channel}</span>}
                 </div>
-                <div className="ag-proj">{r.projeto}</div>
-                <div className="ag-summary">{r.summary ?? "—"}</div>
-                <div className="ag-when">{timeAgo(r.ts)}{r.host ? ` · ${r.host}` : ""}</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <h2 className="ag-h2">Últimas execuções</h2>
-      {feed.length === 0 ? (
-        <div className="ag-empty">Sem histórico ainda.</div>
-      ) : (
-        <div className="ag-feedwrap">
-          <table className="ag-feed">
-            <thead><tr><th></th><th>Tarefa</th><th>Resumo</th><th>Quando</th></tr></thead>
-            <tbody>
-              {feed.map((r, i) => {
-                const m = metaOf(r.status);
-                return (
-                  <tr key={i}>
-                    <td><span className={`ag-dot ${m.cls}`} /></td>
-                    <td className="ag-tcell">{r.projeto}/{r.tarefa}</td>
-                    <td className="ag-scell">{r.summary ?? "—"}</td>
-                    <td className="ag-wcell">{timeAgo(r.ts)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <p className="ag-foot">
-        Somente leitura · fonte <code>reserva.agent_runs</code> · Central de Agentes i10 · independente.
-      </p>
+                <div className="ap-title">{a.title}</div>
+                {a.target && <div className="ap-target">Para: {a.target}</div>}
+                {a.reason && <div className="ap-reason">{a.reason}</div>}
+                <details className="ap-drawer">
+                  <summary>ver e editar a mensagem preparada</summary>
+                  <textarea name="message" defaultValue={a.message ?? ""} rows={5} />
+                </details>
+                <div className="ap-actions">
+                  <button className="ap-btn ok" formAction={approveApproval}>
+                    {a.kind === "externo" ? "Aprovar e enviar" : "Aprovar e aplicar"}
+                  </button>
+                  <button className="ap-btn no" formAction={rejectApproval}>Recusar</button>
+                </div>
+              </form>
+            ))}
+          </div>
+        )}
+        <p className="ap-foot">Somente leitura na frota · fonte <code>reserva.agent_runs</code> · publicado pelo Mac mini · Central de Agentes i10</p>
+      </section>
     </main>
   );
 }
