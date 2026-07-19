@@ -95,6 +95,12 @@ export function licitaUnits(board: Run[], approvals: Approval[]): Unit[] {
     { key: "lic-editais", code: "ED", name: "Leitura de editais", role: "IA lê o edital em PDF", autonomy: "ATIVO",
       state: ed?.status === "WARN" ? "trabalhando" : ed ? "vigiando" : "ocioso", accent: "violet", pending: p("Leitura de editais"),
       last: ed?.summary ?? "fila de análise", acts: ["contando a fila de editais", "priorizando por prazo", "extraindo objeto/exigências", "aguardando ciclo"] },
+    { key: "lic-recompras", code: "RC", name: "Recompras previsíveis", role: "Antecipa a próxima licitação", autonomy: "APRENDIZ",
+      state: p("Recompras previsíveis") ? "aguardando" : "vigiando", accent: "cyan", pending: p("Recompras previsíveis"),
+      last: "órgãos recorrentes", acts: ["mapeando compradores recorrentes", "cruzando histórico 18m", "achando janelas fechadas", "aguardando seu OK"] },
+    { key: "lic-preco", code: "PR", name: "Preço fora da curva", role: "Due diligence de preço", autonomy: "APRENDIZ",
+      state: p("Preço fora da curva") ? "aguardando" : "vigiando", accent: "amber", pending: p("Preço fora da curva"),
+      last: "itens vs mercado", acts: ["comparando itens vs mercado", "medindo desvio de preço", "filtrando erros de dado", "aguardando ciclo"] },
   ];
 }
 
