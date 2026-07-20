@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { currentUser, canSeeAgentes } from "@/lib/auth";
+import { currentUser, canSeeAgentes, isAdmin } from "@/lib/auth";
 import { logout } from "./actions";
 import { loadAll, summaryFor, timeAgo } from "@/lib/fleet-data";
 
@@ -20,6 +20,10 @@ export default async function Hub() {
     <main className="hub">
       <div className="cc-scan" aria-hidden />
       <div className="hub-topbar">
+        <div className="cc-navlinks">
+          <Link className="cc-navlink" href="/historico">histórico</Link>
+          {isAdmin(me.role) && <Link className="cc-navlink" href="/usuarios">usuários</Link>}
+        </div>
         <form action={logout}><button className="cc-logout" type="submit">encerrar sessão · {me.name}</button></form>
       </div>
 

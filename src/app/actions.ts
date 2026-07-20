@@ -3,7 +3,10 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
-import { verifyCredentials, currentUser, canSeeAgentes } from "@/lib/auth";
+import {
+  verifyCredentials, currentUser, canSeeAgentes, canApprove, canDeployExternal,
+  canManageUsers, upsertAgentesUser, setAgentesRole, AGENTES_ROLES,
+} from "@/lib/auth";
 import { createSession, destroySession } from "@/lib/session";
 
 export type LoginState = { error?: string } | undefined;
@@ -18,13 +21,13 @@ export async function login(
 
   const user = await verifyCredentials(email, password);
   if (!user) return { error: "E-mail ou senha inválidos." };
-  if (!canSeeAgentes(user.role)) return { error: "Sua conta não tem acesso ao painel de Agentes." };
+  if (!canSeeAgentes(user.agentes_role)) return { error: "Sua conta não tem acesso ao painel de Agentes." };
 
   await createSession({
     sub: String(user.id),
     email: user.email,
     name: user.name,
-    role: user.role,
+    role: user.agentes_role ?? "",
   });
   redirect("/");
 }
@@ -34,14 +37,24 @@ export async function logout() {
   redirect("/login");
 }
 
-async function requireTotal() {
+async function requireSee() {
   const me = await currentUser();
   if (!me || !canSeeAgentes(me.role)) throw new Error("Acesso negado.");
   return me;
 }
+async function requireApprove() {
+  const me = await currentUser();
+  if (!me || !canApprove(me.role)) throw new Error("Você não tem permissão para aprovar.");
+  return me;
+}
+async function requireAdmin() {
+  const me = await currentUser();
+  if (!me || !canManageUsers(me.role)) throw new Error("Ação restrita a Admin.");
+  return me;
+}
 
 export async function approveApproval(formData: FormData) {
-  const me = await requireTotal();
+  const me = await requireApprove();
   const id = Number(formData.get("id"));
   const message = String(formData.get("message") || "");
   if (!id) return;
@@ -52,6 +65,10 @@ export async function approveApproval(formData: FormData) {
     FROM reserva.agent_approvals WHERE id = ${id} AND status = 'pending'
   `) as Array<{ send_to: string | null; send_conv_id: number | null; send_template: string | null; send_vars: Record<string, string> | null; channel: string | null }>;
   const a = rows[0];
+  // Ação externa (disparo real de WhatsApp pra prefeitura) = só Admin.
+  if (a?.send_template && !canDeployExternal(me.role)) {
+    throw new Error("Só Admin pode aprovar envio de WhatsApp pra prefeituras.");
+  }
   // Sugestões de melhoria (Engenheiro/UX/UI/Produto) → enfileira p/ a IA implementar.
   const ehMelhoria = (a?.channel ?? "").startsWith("Melhoria");
   const execStatus = ehMelhoria ? "queued" : null;
@@ -94,7 +111,8 @@ export async function approveApproval(formData: FormData) {
 // Botão "Deploy" nos itens já construídos (exec_status='built') → enfileira o
 // merge do PR (o mini processa → Vercel deploya → 'done').
 export async function deployApproval(formData: FormData) {
-  await requireTotal();
+  // Deploy em produção (merge do PR) = só Admin.
+  await requireAdmin();
   const id = Number(formData.get("id"));
   if (!id) return;
   await sql`
@@ -105,7 +123,7 @@ export async function deployApproval(formData: FormData) {
 }
 
 export async function rejectApproval(formData: FormData) {
-  const me = await requireTotal();
+  const me = await requireApprove();
   const id = Number(formData.get("id"));
   if (!id) return;
   await sql`
@@ -114,4 +132,50 @@ export async function rejectApproval(formData: FormData) {
     WHERE id = ${id} AND status = 'pending'
   `;
   revalidatePath("/"); revalidatePath("/crm"); revalidatePath("/licita");
+}
+
+// Re-tenta um item que falhou (ex.: "fetch failed" transiente) — volta pra fila
+// da IA. Não faz deploy: reconstrói e gera novo PR pra revisão.
+export async function retryApproval(formData: FormData) {
+  await requireApprove();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  await sql`
+    UPDATE reserva.agent_approvals
+    SET exec_status = 'queued', exec_log = null, exec_pr = null, exec_review = null,
+        exec_preview = null, exec_updated_at = now()
+    WHERE id = ${id} AND exec_status = 'failed'
+  `;
+  revalidatePath("/"); revalidatePath("/crm"); revalidatePath("/licita");
+}
+
+// ── Gestão de usuários (Admin) ──────────────────────────────────────────────
+export type UserFormState = { error?: string; ok?: string } | undefined;
+
+export async function createUserAction(_prev: UserFormState, formData: FormData): Promise<UserFormState> {
+  await requireAdmin();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const name = String(formData.get("name") || "").trim();
+  const role = String(formData.get("agentes_role") || "");
+  const password = String(formData.get("password") || "");
+  if (!email || !name || !role) return { error: "Preencha e-mail, nome e papel." };
+  if (!AGENTES_ROLES.includes(role as (typeof AGENTES_ROLES)[number])) return { error: "Papel inválido." };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "E-mail inválido." };
+  try {
+    const r = await upsertAgentesUser(email, name, role, password || Math.random().toString(36).slice(2, 10) + "Aa1!");
+    revalidatePath("/usuarios");
+    return { ok: r.created ? `Usuário ${name} criado.` : `Acesso de ${name} atualizado (usuário já existia).` };
+  } catch (e) {
+    return { error: "Falhou: " + String((e as Error).message).slice(0, 120) };
+  }
+}
+
+export async function changeRoleAction(formData: FormData) {
+  await requireAdmin();
+  const id = Number(formData.get("id"));
+  const role = String(formData.get("agentes_role") || "");
+  if (!id) return;
+  if (role === "revogar") { await setAgentesRole(id, null); }
+  else if (AGENTES_ROLES.includes(role as (typeof AGENTES_ROLES)[number])) { await setAgentesRole(id, role); }
+  revalidatePath("/usuarios");
 }

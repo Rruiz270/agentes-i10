@@ -39,15 +39,31 @@ export type ExecReview = { resumo: string; arquivos: string[]; risco: string; te
 export type ExecItem = {
   id: string; agent: string; projeto: string; title: string;
   exec_status: string; exec_pr: string | null; exec_log: string | null;
-  exec_review: ExecReview; exec_preview: string | null;
+  exec_review: ExecReview; exec_preview: string | null; decided_by: string | null;
 };
 export async function loadExecucao(projeto: string): Promise<ExecItem[]> {
   return (await sql`
-    SELECT id, agent, projeto, title, exec_status, exec_pr, exec_log, exec_review, exec_preview
+    SELECT id, agent, projeto, title, exec_status, exec_pr, exec_log, exec_review, exec_preview, decided_by
     FROM reserva.agent_approvals
     WHERE projeto = ${projeto} AND exec_status IS NOT NULL
     ORDER BY exec_updated_at DESC LIMIT 12
   `) as ExecItem[];
+}
+
+// ── Histórico / auditoria: toda decisão tomada, por quem, quando, desfecho ───
+export type HistItem = {
+  id: string; projeto: string; agent: string; channel: string | null; title: string;
+  status: string; decided_by: string | null; decided_at: string | null;
+  exec_status: string | null; exec_pr: string | null; send_status: string | null;
+};
+export async function loadHistorico(limit = 200): Promise<HistItem[]> {
+  return (await sql`
+    SELECT id, projeto, agent, channel, title, status, decided_by, decided_at,
+           exec_status, exec_pr, send_status
+    FROM reserva.agent_approvals
+    WHERE status IN ('approved', 'rejected')
+    ORDER BY decided_at DESC NULLS LAST LIMIT ${limit}
+  `) as HistItem[];
 }
 export const execAtivo = (items: ExecItem[]) =>
   items.some((i) => ["queued", "executing", "deploying"].includes(i.exec_status));

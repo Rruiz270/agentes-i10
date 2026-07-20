@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { currentUser, canSeeAgentes } from "@/lib/auth";
+import { currentUser, canSeeAgentes, isAdmin } from "@/lib/auth";
 import { logout } from "../actions";
 import CommandCenter, { type Fleet } from "@/components/command-center";
 import ApprovalsSection from "@/components/approvals-section";
@@ -35,6 +35,10 @@ export default async function CrmPage() {
     <main className="ccwrap">
       <div className="cc-logout-bar">
         <Link className="cc-back" href="/">← projetos</Link>
+        <div className="cc-navlinks">
+          <Link className="cc-navlink" href="/historico">histórico</Link>
+          {isAdmin(me.role) && <Link className="cc-navlink" href="/usuarios">usuários</Link>}
+        </div>
         <form action={logout}><button className="cc-logout" type="submit">encerrar sessão · {me.name}</button></form>
       </div>
       <AutoRefresh active={execAtivo(exec)} />

@@ -1,4 +1,4 @@
-import { deployApproval } from "@/app/actions";
+import { deployApproval, retryApproval } from "@/app/actions";
 import type { ExecItem } from "@/lib/fleet-data";
 
 const STATE: Record<string, { label: string; cls: string; icon: string }> = {
@@ -31,11 +31,19 @@ export default function ExecSection({ items }: { items: ExecItem[] }) {
             <div className={`ex-card ${s.cls}`} key={it.id}>
               <div className="ex-top">
                 <span className="ex-agent">{it.agent}</span>
+                {it.decided_by && <span className="ex-by">✅ {it.decided_by.split("@")[0]}</span>}
                 <span className={`ex-state ${s.cls}`}>{s.icon} {s.label}</span>
               </div>
               <div className="ex-title">{it.title.replace(/^💡\s*/, "")}</div>
               {running && <div className="ex-bar" aria-hidden><span /></div>}
               {it.exec_status === "failed" && it.exec_log && <div className="ex-log">{it.exec_log.slice(0, 200)}</div>}
+              {it.exec_status === "failed" && (
+                <form className="ex-retry-form">
+                  <input type="hidden" name="id" value={it.id} />
+                  <button className="ex-retry" formAction={retryApproval}>↻ Tentar de novo</button>
+                  <span className="ex-retry-hint">re-executa a IA e gera um novo PR</span>
+                </form>
+              )}
 
               {it.exec_status === "built" && rev && (
                 <details className="ex-rev">
