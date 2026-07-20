@@ -47,6 +47,35 @@ export async function loadAll() {
   return { board, feed, approvals };
 }
 
+// ── Autonomia: Aprendiz → Autônomo por histórico de aprovações ──────────────
+export type Stats = Map<string, { aprov: number; rej: number }>;
+export async function loadStats(): Promise<Stats> {
+  const rows = (await sql`
+    SELECT projeto, agent,
+      count(*) FILTER (WHERE status = 'approved')::int aprov,
+      count(*) FILTER (WHERE status = 'rejected')::int rej
+    FROM reserva.agent_approvals GROUP BY projeto, agent
+  `) as { projeto: string; agent: string; aprov: number; rej: number }[];
+  const m: Stats = new Map();
+  for (const r of rows) m.set(`${r.projeto}|${r.agent}`, { aprov: r.aprov, rej: r.rej });
+  return m;
+}
+// Externos (mandam pra prefeitura real) exigem barra mais alta.
+const META_EXTERNO = new Set(["Leads sem resposta"]);
+export const metaDe = (agent: string) => (META_EXTERNO.has(agent) ? 20 : 10);
+
+// Aplica o nível real a cada unidade Aprendiz: mostra progresso X/meta e
+// gradua pra Autônomo quando bate a meta. Unidades Ativo/Autônomo não mudam.
+export function aplicarAutonomia(units: Unit[], projeto: string, stats: Stats): Unit[] {
+  return units.map((u) => {
+    if (u.autonomy !== "APRENDIZ") return u;
+    const s = stats.get(`${projeto}|${u.name}`) ?? { aprov: 0, rej: 0 };
+    const meta = metaDe(u.name);
+    if (s.aprov >= meta) return { ...u, autonomy: "AUTÔNOMO", state: u.state === "vigiando" ? "trabalhando" : u.state };
+    return { ...u, prog: { a: s.aprov, meta } };
+  });
+}
+
 const runOf = (board: Run[], proj: string, tarefa: string) =>
   board.find((b) => b.projeto === proj && b.tarefa === tarefa);
 const pendByAgent = (approvals: Approval[], a: string) => approvals.filter((x) => x.agent === a).length;

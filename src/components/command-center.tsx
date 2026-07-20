@@ -13,6 +13,7 @@ export type Unit = {
   pending: number;
   last: string;
   acts?: string[];
+  prog?: { a: number; meta: number }; // progresso Aprendiz → Autônomo (aprovações/meta)
 };
 
 export type Fleet = { code: string; label: string; sub: string; units: Unit[] };
@@ -34,7 +35,7 @@ function Unidade({ u, i, tick }: { u: Unit; i: number; tick: number }) {
           <div className="unit-role">{u.role}</div>
         </div>
         <div className={`unit-auto au-${u.autonomy === "AUTÔNOMO" ? "auto" : u.autonomy === "APRENDIZ" ? "learn" : "on"}`}>
-          {u.autonomy}
+          {u.autonomy}{u.prog ? <span className="unit-prog">{u.prog.a}/{u.prog.meta}</span> : null}
         </div>
       </div>
       <div className="unit-state"><span className="unit-ring" />{STATE_LABEL[u.state]}</div>

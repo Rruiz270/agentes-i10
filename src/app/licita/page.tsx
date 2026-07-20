@@ -5,7 +5,7 @@ import { logout } from "../actions";
 import CommandCenter, { type Fleet } from "@/components/command-center";
 import ApprovalsSection from "@/components/approvals-section";
 import InsightsPanels from "@/components/insights-panels";
-import { loadAll, loadInsights, licitaUnits, melhoriaUnits, telFor, timeAgo } from "@/lib/fleet-data";
+import { loadAll, loadInsights, loadStats, aplicarAutonomia, licitaUnits, melhoriaUnits, telFor, timeAgo } from "@/lib/fleet-data";
 
 export const dynamic = "force-dynamic";
 const PROJS = ["licita360"];
@@ -17,8 +17,9 @@ export default async function LicitaPage() {
 
   const { board, feed, approvals } = await loadAll();
   const ins = await loadInsights("licita360");
-  const ops = licitaUnits(board, approvals);
-  const inov = melhoriaUnits("licita360", approvals);
+  const stats = await loadStats();
+  const ops = aplicarAutonomia(licitaUnits(board, approvals), "licita360", stats);
+  const inov = aplicarAutonomia(melhoriaUnits("licita360", approvals), "licita360", stats);
   const appr = approvals.filter((a) => a.projeto === "licita360");
   const fails = board.filter((b) => PROJS.includes(b.projeto) && b.status === "FAIL").length;
   const lfeed = feed.filter((r) => PROJS.includes(r.projeto));

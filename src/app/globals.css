@@ -91,6 +91,7 @@ button{font-family:inherit}
 .au-auto{background:rgba(52,229,164,.14);color:var(--mint);border:1px solid rgba(52,229,164,.3)}
 .au-learn{background:rgba(167,139,250,.14);color:var(--violet);border:1px solid rgba(167,139,250,.3)}
 .au-on{background:rgba(34,211,238,.12);color:var(--cyan);border:1px solid rgba(34,211,238,.3)}
+.unit-prog{margin-left:5px;font-weight:700;opacity:.85;font-variant-numeric:tabular-nums}
 .unit-state{display:flex;align-items:center;gap:9px;margin-top:13px;font-family:var(--mono);font-size:10.5px;letter-spacing:1.2px;color:var(--ink)}
 .unit-ring{width:9px;height:9px;border-radius:50%;background:var(--ac);position:relative;flex:none;box-shadow:0 0 8px var(--ac)}
 .unit-ring::before{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--ac);animation:ring 1.8s ease-out infinite}
