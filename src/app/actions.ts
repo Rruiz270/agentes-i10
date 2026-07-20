@@ -161,10 +161,16 @@ export async function createUserAction(_prev: UserFormState, formData: FormData)
   if (!email || !name || !role) return { error: "Preencha e-mail, nome e papel." };
   if (!AGENTES_ROLES.includes(role as (typeof AGENTES_ROLES)[number])) return { error: "Papel inválido." };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "E-mail inválido." };
+  // senha: usa a digitada, ou gera uma forte e legível pra você repassar
+  const senha = password || `i10-${Math.random().toString(36).slice(2, 6)}-${Math.random().toString(36).slice(2, 6)}`;
   try {
-    const r = await upsertAgentesUser(email, name, role, password || Math.random().toString(36).slice(2, 10) + "Aa1!");
+    const r = await upsertAgentesUser(email, name, role, senha);
     revalidatePath("/usuarios");
-    return { ok: r.created ? `Usuário ${name} criado.` : `Acesso de ${name} atualizado (usuário já existia).` };
+    return {
+      ok: r.created
+        ? `✅ ${name} criado. Login: ${email} · Senha: ${senha} — copie e envie pra pessoa (não aparece de novo).`
+        : `✅ Acesso de ${name} atualizado (já existia; senha mantida).`,
+    };
   } catch (e) {
     return { error: "Falhou: " + String((e as Error).message).slice(0, 120) };
   }
