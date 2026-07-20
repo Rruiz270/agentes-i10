@@ -35,13 +35,15 @@ export async function loadInsights(projeto: string): Promise<Insights> {
   return rows[0]?.data ?? null;
 }
 
+export type ExecReview = { resumo: string; arquivos: string[]; risco: string; testar: string } | null;
 export type ExecItem = {
   id: string; agent: string; projeto: string; title: string;
   exec_status: string; exec_pr: string | null; exec_log: string | null;
+  exec_review: ExecReview; exec_preview: string | null;
 };
 export async function loadExecucao(projeto: string): Promise<ExecItem[]> {
   return (await sql`
-    SELECT id, agent, projeto, title, exec_status, exec_pr, exec_log
+    SELECT id, agent, projeto, title, exec_status, exec_pr, exec_log, exec_review, exec_preview
     FROM reserva.agent_approvals
     WHERE projeto = ${projeto} AND exec_status IS NOT NULL
     ORDER BY exec_updated_at DESC LIMIT 12
