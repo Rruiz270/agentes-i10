@@ -62,8 +62,11 @@ export default async function HistoricoPage() {
                       {h.title.replace(/^💡\s*/, "")}
                       {h.exec_pr && <a className="hist-pr" href={h.exec_pr} target="_blank" rel="noreferrer">PR ↗</a>}
                     </td>
-                    <td><span className={`hist-dec ${h.status}`}>{h.status === "approved" ? "✅ aprovado" : "✕ recusado"}</span></td>
-                    <td className="hist-by">{h.decided_by ? h.decided_by.split("@")[0] : "—"}</td>
+                    <td><span className={`hist-dec ${h.status}`}>
+                      {h.status === "approved" ? "✅ aprovado" : h.status === "vetado" ? "⚖️ vetado pelo júri" : "✕ recusado"}
+                      {h.status === "vetado" && typeof h.juri_score === "number" ? ` · ${h.juri_score}/10` : ""}
+                    </span></td>
+                    <td className="hist-by">{h.decided_by ? h.decided_by.split("@")[0] : (h.status === "vetado" ? (h.juri_by ?? "júri") : "—")}</td>
                     <td><span className={`hist-out ${d.cls}`}>{d.txt}</span></td>
                   </tr>
                 );

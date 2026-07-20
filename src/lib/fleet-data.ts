@@ -2,9 +2,12 @@ import { sql } from "@/lib/db";
 import type { Unit, Tel } from "@/components/command-center";
 
 export type Run = { projeto: string; tarefa: string; status: string; summary: string | null; host: string | null; ts: string };
+export type JuriLente = { nota: number | null; parecer: string };
+export type JuriParecer = { sintese: string; vera: JuriLente; rui: JuriLente; vania: JuriLente } | null;
 export type Approval = {
   id: string; agent: string; kind: string; channel: string | null; title: string;
   target: string | null; reason: string | null; message: string | null; projeto: string;
+  juri_verdict: string | null; juri_score: number | null; juri_parecer: JuriParecer; juri_by: string | null;
 };
 
 const TELCLS: Record<string, string> = { PASS: "ok", WARN: "warn", FAIL: "fail", SKIP: "skip" };
@@ -55,14 +58,15 @@ export type HistItem = {
   id: string; projeto: string; agent: string; channel: string | null; title: string;
   status: string; decided_by: string | null; decided_at: string | null;
   exec_status: string | null; exec_pr: string | null; send_status: string | null;
+  juri_verdict: string | null; juri_score: number | null; juri_by: string | null;
 };
 export async function loadHistorico(limit = 200): Promise<HistItem[]> {
   return (await sql`
     SELECT id, projeto, agent, channel, title, status, decided_by, decided_at,
-           exec_status, exec_pr, send_status
+           exec_status, exec_pr, send_status, juri_verdict, juri_score, juri_by
     FROM reserva.agent_approvals
-    WHERE status IN ('approved', 'rejected')
-    ORDER BY decided_at DESC NULLS LAST LIMIT ${limit}
+    WHERE status IN ('approved', 'rejected', 'vetado')
+    ORDER BY COALESCE(decided_at, juri_at) DESC NULLS LAST LIMIT ${limit}
   `) as HistItem[];
 }
 export const execAtivo = (items: ExecItem[]) =>
@@ -75,7 +79,8 @@ export async function loadAll() {
   const feed = (await sql`
     SELECT projeto, tarefa, status, summary, ts FROM reserva.agent_runs ORDER BY ts DESC LIMIT 30`) as Run[];
   const approvals = (await sql`
-    SELECT id, agent, kind, channel, title, target, reason, message, projeto
+    SELECT id, agent, kind, channel, title, target, reason, message, projeto,
+           juri_verdict, juri_score, juri_parecer, juri_by
     FROM reserva.agent_approvals WHERE status = 'pending' ORDER BY projeto, created_at`) as Approval[];
   return { board, feed, approvals };
 }
