@@ -48,10 +48,13 @@ export async function approveApproval(formData: FormData) {
 
   // Dados de envio (se a ação for um disparo real via template aprovado).
   const rows = (await sql`
-    SELECT send_to, send_conv_id, send_template, send_vars
+    SELECT send_to, send_conv_id, send_template, send_vars, channel
     FROM reserva.agent_approvals WHERE id = ${id} AND status = 'pending'
-  `) as Array<{ send_to: string | null; send_conv_id: number | null; send_template: string | null; send_vars: Record<string, string> | null }>;
+  `) as Array<{ send_to: string | null; send_conv_id: number | null; send_template: string | null; send_vars: Record<string, string> | null; channel: string | null }>;
   const a = rows[0];
+  // Sugestões de melhoria (Engenheiro/UX/UI/Produto) → enfileira p/ a IA implementar.
+  const ehMelhoria = (a?.channel ?? "").startsWith("Melhoria");
+  const execStatus = ehMelhoria ? "queued" : null;
 
   let sendStatus: string | null = null;
   let sendResult: string | null = null;
@@ -81,10 +84,24 @@ export async function approveApproval(formData: FormData) {
   await sql`
     UPDATE reserva.agent_approvals
     SET status = 'approved', message = ${message}, decided_at = now(), decided_by = ${me.email},
-        send_status = ${sendStatus}, send_result = ${sendResult}
+        send_status = ${sendStatus}, send_result = ${sendResult},
+        exec_status = ${execStatus}, exec_updated_at = ${execStatus ? new Date().toISOString() : null}
     WHERE id = ${id} AND status = 'pending'
   `;
-  revalidatePath("/");
+  revalidatePath("/"); revalidatePath("/crm"); revalidatePath("/licita");
+}
+
+// Botão "Deploy" nos itens já construídos (exec_status='built') → enfileira o
+// merge do PR (o mini processa → Vercel deploya → 'done').
+export async function deployApproval(formData: FormData) {
+  await requireTotal();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  await sql`
+    UPDATE reserva.agent_approvals SET exec_status = 'deploy_queued', exec_updated_at = now()
+    WHERE id = ${id} AND exec_status = 'built'
+  `;
+  revalidatePath("/"); revalidatePath("/crm"); revalidatePath("/licita");
 }
 
 export async function rejectApproval(formData: FormData) {
@@ -96,5 +113,5 @@ export async function rejectApproval(formData: FormData) {
     SET status = 'rejected', decided_at = now(), decided_by = ${me.email}
     WHERE id = ${id} AND status = 'pending'
   `;
-  revalidatePath("/");
+  revalidatePath("/"); revalidatePath("/crm"); revalidatePath("/licita");
 }

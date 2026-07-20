@@ -35,6 +35,21 @@ export async function loadInsights(projeto: string): Promise<Insights> {
   return rows[0]?.data ?? null;
 }
 
+export type ExecItem = {
+  id: string; agent: string; projeto: string; title: string;
+  exec_status: string; exec_pr: string | null; exec_log: string | null;
+};
+export async function loadExecucao(projeto: string): Promise<ExecItem[]> {
+  return (await sql`
+    SELECT id, agent, projeto, title, exec_status, exec_pr, exec_log
+    FROM reserva.agent_approvals
+    WHERE projeto = ${projeto} AND exec_status IS NOT NULL
+    ORDER BY exec_updated_at DESC LIMIT 12
+  `) as ExecItem[];
+}
+export const execAtivo = (items: ExecItem[]) =>
+  items.some((i) => ["queued", "executing", "deploying"].includes(i.exec_status));
+
 export async function loadAll() {
   const board = (await sql`
     SELECT DISTINCT ON (projeto, tarefa) projeto, tarefa, status, summary, host, ts
