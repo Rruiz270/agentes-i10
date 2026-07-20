@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { agentAnchor } from "@/lib/anchor";
 
 export type Unit = {
   key: string;
@@ -43,7 +44,7 @@ function Unidade({ u, i, tick }: { u: Unit; i: number; tick: number }) {
       <div className="unit-signal" aria-hidden>
         {Array.from({ length: 9 }).map((_, k) => <span key={k} style={{ animationDelay: `${k * 0.11}s` }} />)}
       </div>
-      {u.pending > 0 && <a className="unit-alert" href="#aprovacoes">{u.pending} aguardando você ▸</a>}
+      {u.pending > 0 && <a className="unit-alert" href={`#${agentAnchor(u.name)}`}>{u.pending} aguardando você ▸</a>}
     </div>
   );
 }

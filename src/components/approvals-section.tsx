@@ -1,7 +1,12 @@
 import { approveApproval, rejectApproval } from "@/app/actions";
 import type { Approval } from "@/lib/fleet-data";
+import { agentAnchor } from "@/lib/anchor";
 
 export default function ApprovalsSection({ approvals }: { approvals: Approval[] }) {
+  // Agrupa por agente (chunks contíguos) mantendo ordem estável dentro de cada um,
+  // pra o botão "X aguardando você" pousar no chunk certo.
+  const grouped = [...approvals].sort((a, b) => a.agent.localeCompare(b.agent, "pt-BR"));
+  const seen = new Set<string>();
   return (
     <section id="aprovacoes" className="ap-sec">
       <h2 className="ap-h2">
@@ -9,12 +14,15 @@ export default function ApprovalsSection({ approvals }: { approvals: Approval[] 
         {approvals.length ? <span className="ap-count">{approvals.length} aguardando você</span> : null}
       </h2>
       <p className="ap-note">O que os agentes prepararam. Revise, edite, e aprove — nada sai sem seu OK.</p>
-      {approvals.length === 0 ? (
+      {grouped.length === 0 ? (
         <div className="ap-empty">✓ Nenhuma ação aguardando aprovação.</div>
       ) : (
         <div className="ap-list">
-          {approvals.map((a) => (
-            <form key={a.id} className={`ap-card ${a.kind}`}>
+          {grouped.map((a) => {
+            const first = !seen.has(a.agent);
+            if (first) seen.add(a.agent);
+            return (
+            <form key={a.id} id={first ? agentAnchor(a.agent) : undefined} className={`ap-card ${a.kind}`}>
               <input type="hidden" name="id" value={a.id} />
               <div className="ap-top">
                 <span className="ap-agent">{a.agent}</span>
@@ -35,7 +43,8 @@ export default function ApprovalsSection({ approvals }: { approvals: Approval[] 
                 <button className="ap-btn no" formAction={rejectApproval}>Recusar</button>
               </div>
             </form>
-          ))}
+            );
+          })}
         </div>
       )}
       <p className="ap-foot">fonte <code>reserva.agent_runs</code> · publicado pelo Mac mini · Central de Agentes i10</p>
