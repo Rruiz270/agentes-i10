@@ -13,6 +13,8 @@ type Item = {
   // metadados de envio real (opcionais) — preenchidos por agentes que enviam
   send_to?: string; send_conv_id?: number; send_template?: string;
   send_vars?: Record<string, string>;
+  // ação automática (agente graduado): registro já decidido/enviado
+  status?: string; decided_by?: string; send_status?: string; send_result?: string;
 };
 const valid = (i: Item) =>
   typeof i?.agent === "string" && typeof i?.title === "string" &&
@@ -33,15 +35,20 @@ export async function POST(request: Request) {
 
   let inserted = 0;
   for (const i of ok) {
+    const st = i.status === "approved" ? "approved" : "pending";
+    const decidedBy = st === "approved" ? (i.decided_by ?? "auto") : null;
     const r = await sql`
       INSERT INTO reserva.agent_approvals
         (agent, kind, channel, title, target, reason, message, ext_key, projeto,
-         send_to, send_conv_id, send_template, send_vars)
+         send_to, send_conv_id, send_template, send_vars,
+         status, decided_by, decided_at, send_status, send_result)
       VALUES (${i.agent!}, ${i.kind!}, ${i.channel ?? null}, ${i.title!},
               ${i.target ?? null}, ${i.reason ?? null}, ${i.message ?? null}, ${i.ext_key ?? null},
               ${i.projeto ?? "crm"},
               ${i.send_to ?? null}, ${i.send_conv_id ?? null}, ${i.send_template ?? null},
-              ${i.send_vars ? JSON.stringify(i.send_vars) : null})
+              ${i.send_vars ? JSON.stringify(i.send_vars) : null},
+              ${st}, ${decidedBy}, ${st === "approved" ? new Date().toISOString() : null},
+              ${i.send_status ?? null}, ${i.send_result ?? null})
       ON CONFLICT (ext_key) WHERE status = 'pending' DO NOTHING
       RETURNING id
     `;
