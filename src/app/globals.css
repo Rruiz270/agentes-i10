@@ -342,6 +342,19 @@ button{font-family:inherit}
 .usr-role{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px}
 .usr-role.r-admin{color:var(--mint);background:rgba(52,229,164,.12)}.usr-role.r-aprovador{color:var(--cyan);background:rgba(34,211,238,.12)}.usr-role.r-visualizador{color:var(--dim);background:rgba(255,255,255,.05)}
 .usr-you{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+/* relatório do júri */
+.jr-h3{font-size:15px;font-weight:750;margin:6px 0 10px}.jr-h3 span{color:var(--dim);font-weight:400;font-size:13px}
+.jr-list{display:flex;flex-direction:column;gap:10px}
+.jr-card{border:1px solid var(--bd);border-radius:12px;padding:13px 15px;background:rgba(6,11,22,.5)}
+.jr-card.veto{border-left:3px solid var(--violet)}.jr-card.ress{border-left:3px solid var(--amber)}
+.jr-top{display:flex;flex-wrap:wrap;align-items:center;gap:9px}
+.jr-agent{font-family:var(--mono);font-size:11px;color:var(--cyan)}
+.jr-nota{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--fg)}
+.jr-when{font-family:var(--mono);font-size:10.5px;color:var(--dim2,#61718c);margin-left:auto}
+.jr-title{font-weight:650;font-size:14px;margin:6px 0 4px}
+.jr-sint{font-size:13px;color:var(--fg);line-height:1.5;margin-bottom:6px}
+.jr-lentes{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--dim)}
+.jr-lentes i{font-family:var(--mono);font-style:normal;color:var(--violet);font-size:10.5px;margin:0 2px}
 @media(prefers-reduced-motion:reduce){.hub-tile{animation:none}.hub-dot.fail{animation:none}}
 @media(max-width:820px){.cc-grid{grid-template-columns:repeat(2,1fr)}.cc-metrics{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.cc-grid{grid-template-columns:1fr}.cc-clock{font-size:18px}}

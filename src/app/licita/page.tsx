@@ -38,6 +38,7 @@ export default async function LicitaPage() {
       <div className="cc-logout-bar">
         <Link className="cc-back" href="/">← projetos</Link>
         <div className="cc-navlinks">
+          <Link className="cc-navlink" href="/juri">júri</Link>
           <Link className="cc-navlink" href="/historico">histórico</Link>
           {isAdmin(me.role) && <Link className="cc-navlink" href="/usuarios">usuários</Link>}
         </div>

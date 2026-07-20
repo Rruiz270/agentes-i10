@@ -85,6 +85,34 @@ export async function loadAll() {
   return { board, feed, approvals };
 }
 
+// ── Relatório do Júri: o que o painel de IA aprovou, ressalvou ou vetou ──────
+export type JuriRow = {
+  id: string; projeto: string; agent: string; title: string;
+  juri_verdict: string; juri_score: number | null; juri_parecer: JuriParecer;
+  juri_at: string | null; status: string; decided_by: string | null;
+};
+export type JuriReport = {
+  placar: { aprovado: number; ressalva: number; vetado: number };
+  vetados: JuriRow[];
+  ressalvas: JuriRow[];
+};
+export async function loadJuriReport(): Promise<JuriReport> {
+  const counts = (await sql`
+    SELECT juri_verdict AS v, count(*)::int n FROM reserva.agent_approvals
+    WHERE juri_verdict IS NOT NULL GROUP BY juri_verdict`) as { v: string; n: number }[];
+  const placar = { aprovado: 0, ressalva: 0, vetado: 0 };
+  for (const c of counts) if (c.v in placar) (placar as Record<string, number>)[c.v] = c.n;
+  const vetados = (await sql`
+    SELECT id, projeto, agent, title, juri_verdict, juri_score, juri_parecer, juri_at, status, decided_by
+    FROM reserva.agent_approvals WHERE status = 'vetado'
+    ORDER BY juri_at DESC NULLS LAST LIMIT 100`) as JuriRow[];
+  const ressalvas = (await sql`
+    SELECT id, projeto, agent, title, juri_verdict, juri_score, juri_parecer, juri_at, status, decided_by
+    FROM reserva.agent_approvals WHERE juri_verdict = 'ressalva' AND status IN ('pending', 'approved')
+    ORDER BY juri_at DESC NULLS LAST LIMIT 50`) as JuriRow[];
+  return { placar, vetados, ressalvas };
+}
+
 // ── Autonomia: Aprendiz → Autônomo por histórico de aprovações ──────────────
 export type Stats = Map<string, { aprov: number; rej: number }>;
 export async function loadStats(): Promise<Stats> {
