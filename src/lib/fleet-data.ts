@@ -104,6 +104,25 @@ export function licitaUnits(board: Run[], approvals: Approval[]): Unit[] {
   ];
 }
 
+// Frota de Inovação/Melhoria — mesma pra todo projeto, escopada por projeto.
+export function melhoriaUnits(projeto: string, approvals: Approval[]): Unit[] {
+  const p = (a: string) => approvals.filter((x) => x.projeto === projeto && x.agent === a).length;
+  return [
+    { key: `${projeto}-eng`, code: "EN", name: "Engenheiro", role: "Melhora código & arquitetura", autonomy: "APRENDIZ",
+      state: p("Engenheiro") ? "aguardando" : "vigiando", accent: "cyan", pending: p("Engenheiro"),
+      last: "revisando o repo", acts: ["explorando a estrutura", "achando dívida técnica", "olhando segurança", "sugerindo melhorias"] },
+    { key: `${projeto}-pd`, code: "PD", name: "Produto/Diferencial", role: "Diferencial competitivo", autonomy: "APRENDIZ",
+      state: p("Produto/Diferencial") ? "aguardando" : "vigiando", accent: "mint", pending: p("Produto/Diferencial"),
+      last: "oportunidades de produto", acts: ["lendo o que o sistema faz", "cruzando com o mercado", "achando diferenciais", "sugerindo features"] },
+    { key: `${projeto}-ux`, code: "UX", name: "UX", role: "Experiência do usuário", autonomy: "APRENDIZ",
+      state: p("UX") ? "aguardando" : "vigiando", accent: "amber", pending: p("UX"),
+      last: "avaliando os fluxos", acts: ["mapeando os fluxos", "achando fricção", "checando estados/mobile", "sugerindo melhorias"] },
+    { key: `${projeto}-ui`, code: "UI", name: "UI/Design", role: "Visual & acessibilidade", autonomy: "APRENDIZ",
+      state: p("UI/Design") ? "aguardando" : "vigiando", accent: "violet", pending: p("UI/Design"),
+      last: "avaliando o visual", acts: ["olhando consistência", "checando acessibilidade", "conferindo a marca i10", "sugerindo polish"] },
+  ];
+}
+
 export function telFor(feed: Run[], projs: string[]): Tel[] {
   return feed.filter((r) => projs.includes(r.projeto)).slice(0, 16).map((r) => ({
     t: hhmm(r.ts), tag: r.status, cls: TELCLS[r.status] ?? "skip", text: `${r.projeto}/${r.tarefa} — ${r.summary ?? "—"}`,

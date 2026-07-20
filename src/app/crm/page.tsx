@@ -4,7 +4,7 @@ import { currentUser, canSeeAgentes } from "@/lib/auth";
 import { logout } from "../actions";
 import CommandCenter, { type Fleet } from "@/components/command-center";
 import ApprovalsSection from "@/components/approvals-section";
-import { loadAll, crmUnits, telFor, timeAgo } from "@/lib/fleet-data";
+import { loadAll, crmUnits, melhoriaUnits, telFor, timeAgo } from "@/lib/fleet-data";
 
 export const dynamic = "force-dynamic";
 const PROJS = ["crm", "crm-marketing", "hq-supervisor"];
@@ -15,12 +15,17 @@ export default async function CrmPage() {
   if (!canSeeAgentes(me.role)) redirect("/login");
 
   const { board, feed, approvals } = await loadAll();
-  const units = crmUnits(board, approvals);
+  const ops = crmUnits(board, approvals);
+  const inov = melhoriaUnits("crm", approvals);
   const appr = approvals.filter((a) => a.projeto === "crm");
   const fails = board.filter((b) => PROJS.includes(b.projeto) && b.status === "FAIL").length;
   const cfeed = feed.filter((r) => PROJS.includes(r.projeto));
   const lastAgo = cfeed[0] ? timeAgo(cfeed[0].ts) : "—";
-  const fleets: Fleet[] = [{ code: "CRM", label: "CRM i10", sub: "captação · funil · marketing", units }];
+  const fleets: Fleet[] = [
+    { code: "OPS", label: "Operação", sub: "captação · funil · marketing", units: ops },
+    { code: "INV", label: "Inovação · melhoria contínua", sub: "engenharia · produto · UX · UI", units: inov },
+  ];
+  const online = ops.length + inov.length;
 
   return (
     <main className="ccwrap">
@@ -28,7 +33,7 @@ export default async function CrmPage() {
         <Link className="cc-back" href="/">← projetos</Link>
         <form action={logout}><button className="cc-logout" type="submit">encerrar sessão · {me.name}</button></form>
       </div>
-      <CommandCenter fleets={fleets} tel={telFor(feed, PROJS)} online={units.length} fails={fails} pending={appr.length} lastAgo={lastAgo} />
+      <CommandCenter fleets={fleets} tel={telFor(feed, PROJS)} online={online} fails={fails} pending={appr.length} lastAgo={lastAgo} />
       <ApprovalsSection approvals={appr} />
     </main>
   );

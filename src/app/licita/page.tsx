@@ -5,7 +5,7 @@ import { logout } from "../actions";
 import CommandCenter, { type Fleet } from "@/components/command-center";
 import ApprovalsSection from "@/components/approvals-section";
 import InsightsPanels from "@/components/insights-panels";
-import { loadAll, loadInsights, licitaUnits, telFor, timeAgo } from "@/lib/fleet-data";
+import { loadAll, loadInsights, licitaUnits, melhoriaUnits, telFor, timeAgo } from "@/lib/fleet-data";
 
 export const dynamic = "force-dynamic";
 const PROJS = ["licita360"];
@@ -17,12 +17,17 @@ export default async function LicitaPage() {
 
   const { board, feed, approvals } = await loadAll();
   const ins = await loadInsights("licita360");
-  const units = licitaUnits(board, approvals);
+  const ops = licitaUnits(board, approvals);
+  const inov = melhoriaUnits("licita360", approvals);
   const appr = approvals.filter((a) => a.projeto === "licita360");
   const fails = board.filter((b) => PROJS.includes(b.projeto) && b.status === "FAIL").length;
   const lfeed = feed.filter((r) => PROJS.includes(r.projeto));
   const lastAgo = lfeed[0] ? timeAgo(lfeed[0].ts) : "—";
-  const fleets: Fleet[] = [{ code: "LIC", label: "Licita360", sub: "radar nacional de licitações", units }];
+  const fleets: Fleet[] = [
+    { code: "LIC", label: "Operação · radar", sub: "radar nacional de licitações", units: ops },
+    { code: "INV", label: "Inovação · melhoria contínua", sub: "engenharia · produto · UX · UI", units: inov },
+  ];
+  const online = ops.length + inov.length;
 
   return (
     <main className="ccwrap">
@@ -30,7 +35,7 @@ export default async function LicitaPage() {
         <Link className="cc-back" href="/">← projetos</Link>
         <form action={logout}><button className="cc-logout" type="submit">encerrar sessão · {me.name}</button></form>
       </div>
-      <CommandCenter fleets={fleets} tel={telFor(feed, PROJS)} online={units.length} fails={fails} pending={appr.length} lastAgo={lastAgo} />
+      <CommandCenter fleets={fleets} tel={telFor(feed, PROJS)} online={online} fails={fails} pending={appr.length} lastAgo={lastAgo} />
       <InsightsPanels ins={ins} />
       <ApprovalsSection approvals={appr} />
     </main>
