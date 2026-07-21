@@ -56,7 +56,7 @@ export default async function HistoricoPage() {
                 const d = desfecho(h);
                 return (
                   <tr key={h.id}>
-                    <td className="hist-when">{quando(h.decided_at)}</td>
+                    <td className="hist-when">{quando(h.ts ?? h.decided_at)}</td>
                     <td>{h.projeto === "licita360" ? "Licita360" : "CRM"}</td>
                     <td className="hist-agent">{h.agent}</td>
                     <td className="hist-item">

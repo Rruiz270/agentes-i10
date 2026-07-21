@@ -59,14 +59,18 @@ export type HistItem = {
   status: string; decided_by: string | null; decided_at: string | null;
   exec_status: string | null; exec_pr: string | null; send_status: string | null;
   juri_verdict: string | null; juri_score: number | null; juri_by: string | null;
+  ts: string | null;
 };
 export async function loadHistorico(limit = 200): Promise<HistItem[]> {
+  // ts = atividade mais recente do item (decisão, veto do júri, ou execução/deploy)
+  // — assim o que você acabou de deployar sobe pro topo e vetado mostra a data certa.
   return (await sql`
     SELECT id, projeto, agent, channel, title, status, decided_by, decided_at,
-           exec_status, exec_pr, send_status, juri_verdict, juri_score, juri_by
+           exec_status, exec_pr, send_status, juri_verdict, juri_score, juri_by,
+           GREATEST(decided_at, juri_at, exec_updated_at) AS ts
     FROM reserva.agent_approvals
     WHERE status IN ('approved', 'rejected', 'vetado')
-    ORDER BY COALESCE(decided_at, juri_at) DESC NULLS LAST LIMIT ${limit}
+    ORDER BY GREATEST(decided_at, juri_at, exec_updated_at) DESC NULLS LAST LIMIT ${limit}
   `) as HistItem[];
 }
 export const execAtivo = (items: ExecItem[]) =>
