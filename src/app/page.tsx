@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser, canSeeAgentes, isAdmin } from "@/lib/auth";
 import { logout } from "./actions";
-import { loadAll, summaryFor, timeAgo } from "@/lib/fleet-data";
+import CriticoBanner from "@/components/critico-banner";
+import { loadAll, loadCriticos, summaryFor, timeAgo } from "@/lib/fleet-data";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export default async function Hub() {
   if (!canSeeAgentes(me.role)) redirect("/login");
 
   const { board, feed, approvals } = await loadAll();
+  const criticos = await loadCriticos();
   const tiles = [summaryFor("crm", board, approvals), summaryFor("licita", board, approvals)];
   const lastAgo = feed[0] ? timeAgo(feed[0].ts) : "—";
   const totalPend = approvals.length;
@@ -35,6 +37,8 @@ export default async function Hub() {
           <div className="hub-sub">Escolha um projeto para entrar no Centro de Comando · último sinal {lastAgo} · {totalPend} aguardando você</div>
         </div>
       </header>
+
+      <CriticoBanner criticos={criticos} />
 
       <div className="hub-tiles">
         {tiles.map((s) => (

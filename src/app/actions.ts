@@ -149,6 +149,19 @@ export async function retryApproval(formData: FormData) {
   revalidatePath("/"); revalidatePath("/crm"); revalidatePath("/licita");
 }
 
+// Resolver/dispensar um alerta CRÍTICO de produção (depois de resolvido/reconhecido).
+export async function resolverCritico(formData: FormData) {
+  const me = await requireApprove();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  await sql`
+    UPDATE reserva.agent_approvals
+    SET status = 'resolvido', decided_at = now(), decided_by = ${me.email}
+    WHERE id = ${id} AND severidade = 'critico' AND status = 'pending'
+  `;
+  revalidatePath("/"); revalidatePath("/crm"); revalidatePath("/licita");
+}
+
 // ── Gestão de usuários (Admin) ──────────────────────────────────────────────
 export type UserFormState = { error?: string; ok?: string } | undefined;
 

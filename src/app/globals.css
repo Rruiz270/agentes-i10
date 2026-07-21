@@ -342,6 +342,20 @@ button{font-family:inherit}
 .usr-role{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px}
 .usr-role.r-admin{color:var(--mint);background:rgba(52,229,164,.12)}.usr-role.r-aprovador{color:var(--cyan);background:rgba(34,211,238,.12)}.usr-role.r-visualizador{color:var(--dim);background:rgba(255,255,255,.05)}
 .usr-you{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+/* Crítico de Produção — faixa vermelha no topo */
+.crit-wrap{display:flex;flex-direction:column;gap:10px;margin:0 0 20px}
+.crit{display:flex;align-items:flex-start;gap:14px;padding:15px 18px;border:1px solid rgba(255,93,115,.5);border-left:4px solid var(--danger);border-radius:13px;
+  background:linear-gradient(100deg,rgba(255,93,115,.14),rgba(255,93,115,.05));box-shadow:0 0 34px -12px var(--danger)}
+.crit-badge{display:flex;align-items:center;gap:7px;flex-shrink:0;font-family:var(--mono);font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--danger);white-space:nowrap;padding-top:2px}
+.crit-dot{width:9px;height:9px;border-radius:50%;background:var(--danger);box-shadow:0 0 10px var(--danger);animation:critpulse 1.1s ease-in-out infinite}
+@keyframes critpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+.crit-body{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.crit-body b{font-size:14.5px;color:var(--fg);font-weight:750}
+.crit-body span{font-size:13px;color:var(--dim);line-height:1.5}
+.crit-proj{font-family:var(--mono);font-size:10.5px;color:var(--dim2,#61718c) !important}
+.crit-btn{flex-shrink:0;font-family:inherit;font-size:12px;font-weight:700;padding:8px 14px;border-radius:9px;border:1px solid rgba(255,93,115,.5);background:rgba(255,93,115,.1);color:#ffb3bd;cursor:pointer}
+.crit-btn:hover{background:rgba(255,93,115,.2)}
+@media(prefers-reduced-motion:reduce){.crit-dot{animation:none}}
 /* relatório do júri */
 .jr-h3{font-size:15px;font-weight:750;margin:6px 0 10px}.jr-h3 span{color:var(--dim);font-weight:400;font-size:13px}
 .jr-list{display:flex;flex-direction:column;gap:10px}

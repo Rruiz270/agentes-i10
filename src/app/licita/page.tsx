@@ -6,8 +6,9 @@ import CommandCenter, { type Fleet } from "@/components/command-center";
 import ApprovalsSection from "@/components/approvals-section";
 import InsightsPanels from "@/components/insights-panels";
 import ExecSection from "@/components/exec-section";
+import CriticoBanner from "@/components/critico-banner";
 import AutoRefresh from "@/components/auto-refresh";
-import { loadAll, loadInsights, loadStats, loadExecucao, execAtivo, aplicarAutonomia, licitaUnits, melhoriaUnits, telFor, timeAgo } from "@/lib/fleet-data";
+import { loadAll, loadInsights, loadStats, loadExecucao, loadCriticos, execAtivo, aplicarAutonomia, licitaUnits, melhoriaUnits, telFor, timeAgo } from "@/lib/fleet-data";
 
 export const dynamic = "force-dynamic";
 const PROJS = ["licita360"];
@@ -21,6 +22,7 @@ export default async function LicitaPage() {
   const ins = await loadInsights("licita360");
   const stats = await loadStats();
   const exec = await loadExecucao("licita360");
+  const criticos = await loadCriticos(PROJS);
   const ops = aplicarAutonomia(licitaUnits(board, approvals), "licita360", stats);
   const inov = aplicarAutonomia(melhoriaUnits("licita360", approvals), "licita360", stats);
   const appr = approvals.filter((a) => a.projeto === "licita360");
@@ -45,6 +47,7 @@ export default async function LicitaPage() {
         <form action={logout}><button className="cc-logout" type="submit">encerrar sessão · {me.name}</button></form>
       </div>
       <AutoRefresh active={execAtivo(exec)} />
+      <CriticoBanner criticos={criticos} />
       <CommandCenter fleets={fleets} tel={telFor(feed, PROJS)} online={online} fails={fails} pending={appr.length} lastAgo={lastAgo} />
       <ExecSection items={exec} />
       <InsightsPanels ins={ins} />

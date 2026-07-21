@@ -85,8 +85,21 @@ export async function loadAll() {
   const approvals = (await sql`
     SELECT id, agent, kind, channel, title, target, reason, message, projeto,
            juri_verdict, juri_score, juri_parecer, juri_by
-    FROM reserva.agent_approvals WHERE status = 'pending' ORDER BY projeto, created_at`) as Approval[];
+    FROM reserva.agent_approvals
+    WHERE status = 'pending' AND (severidade IS DISTINCT FROM 'critico')
+    ORDER BY projeto, created_at`) as Approval[];
   return { board, feed, approvals };
+}
+
+// ── Críticos de Produção: o que AFETA O CLIENTE (dados zerados, página vazia) ─
+export type Critico = { id: string; projeto: string; title: string; reason: string | null; channel: string | null };
+export async function loadCriticos(projetos?: string[]): Promise<Critico[]> {
+  const rows = (await sql`
+    SELECT id, projeto, title, reason, channel
+    FROM reserva.agent_approvals
+    WHERE status = 'pending' AND severidade = 'critico'
+    ORDER BY created_at DESC`) as Critico[];
+  return projetos ? rows.filter((r) => projetos.includes(r.projeto)) : rows;
 }
 
 // ── Relatório do Júri: o que o painel de IA aprovou, ressalvou ou vetou ──────

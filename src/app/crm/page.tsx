@@ -5,8 +5,9 @@ import { logout } from "../actions";
 import CommandCenter, { type Fleet } from "@/components/command-center";
 import ApprovalsSection from "@/components/approvals-section";
 import ExecSection from "@/components/exec-section";
+import CriticoBanner from "@/components/critico-banner";
 import AutoRefresh from "@/components/auto-refresh";
-import { loadAll, loadStats, loadExecucao, execAtivo, aplicarAutonomia, crmUnits, melhoriaUnits, telFor, timeAgo } from "@/lib/fleet-data";
+import { loadAll, loadStats, loadExecucao, loadCriticos, execAtivo, aplicarAutonomia, crmUnits, melhoriaUnits, telFor, timeAgo } from "@/lib/fleet-data";
 
 export const dynamic = "force-dynamic";
 const PROJS = ["crm", "crm-marketing", "hq-supervisor"];
@@ -19,6 +20,7 @@ export default async function CrmPage() {
   const { board, feed, approvals } = await loadAll();
   const stats = await loadStats();
   const exec = await loadExecucao("crm");
+  const criticos = await loadCriticos(PROJS);
   const ops = aplicarAutonomia(crmUnits(board, approvals), "crm", stats);
   const inov = aplicarAutonomia(melhoriaUnits("crm", approvals), "crm", stats);
   const appr = approvals.filter((a) => a.projeto === "crm");
@@ -43,6 +45,7 @@ export default async function CrmPage() {
         <form action={logout}><button className="cc-logout" type="submit">encerrar sessão · {me.name}</button></form>
       </div>
       <AutoRefresh active={execAtivo(exec)} />
+      <CriticoBanner criticos={criticos} />
       <CommandCenter fleets={fleets} tel={telFor(feed, PROJS)} online={online} fails={fails} pending={appr.length} lastAgo={lastAgo} />
       <ExecSection items={exec} />
       <ApprovalsSection approvals={appr} />
