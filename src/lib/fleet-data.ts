@@ -102,6 +102,35 @@ export async function loadCriticos(projetos?: string[]): Promise<Critico[]> {
   return projetos ? rows.filter((r) => projetos.includes(r.projeto)) : rows;
 }
 
+// ── Direção: o pulso do Chief-of-Staff + o dead-man switch da frota ──────────
+export type Prioridade = { titulo: string; porque: string; dono: string; acao: string };
+export type Escalacao = { titulo: string; porque: string };
+export type Pulso = {
+  pulso_em: string | null;
+  resumo: string;
+  prioridades: Prioridade[];
+  escalacoes: Escalacao[];
+  cfo: string;
+  minAtras: number | null; // minutos desde o último sinal de QUALQUER agente (liveness)
+};
+export async function loadPulso(): Promise<Pulso> {
+  const [p] = (await sql`SELECT pulso_em, resumo, prioridades FROM reserva.fleet_pulse WHERE id = 1`) as
+    { pulso_em: string; resumo: string; prioridades: { prioridades?: Prioridade[]; escalacoes?: Escalacao[]; cfo?: string } | null }[];
+  const [live] = (await sql`SELECT max(ts) AS ult FROM reserva.agent_runs`) as { ult: string | null }[];
+  const minAtras = live?.ult ? Math.round((Date.now() - new Date(live.ult).getTime()) / 60000) : null;
+  const j = p?.prioridades ?? {};
+  return {
+    pulso_em: p?.pulso_em ?? null,
+    resumo: p?.resumo ?? "",
+    prioridades: j.prioridades ?? [],
+    escalacoes: j.escalacoes ?? [],
+    cfo: j.cfo ?? "",
+    minAtras,
+  };
+}
+// A frota está OFFLINE se o ping de vida (a cada 5 min) sumiu há mais de 15 min.
+export const FROTA_OFFLINE_MIN = 15;
+
 // ── Relatório do Júri: o que o painel de IA aprovou, ressalvou ou vetou ──────
 export type JuriRow = {
   id: string; projeto: string; agent: string; title: string;

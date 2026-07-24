@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { currentUser, canSeeAgentes, isAdmin } from "@/lib/auth";
 import { logout } from "./actions";
 import CriticoBanner from "@/components/critico-banner";
-import { loadAll, loadCriticos, summaryFor, timeAgo } from "@/lib/fleet-data";
+import FrotaBanner from "@/components/frota-banner";
+import DirecaoSection from "@/components/direcao-section";
+import { loadAll, loadCriticos, loadPulso, summaryFor, timeAgo } from "@/lib/fleet-data";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +16,7 @@ export default async function Hub() {
 
   const { board, feed, approvals } = await loadAll();
   const criticos = await loadCriticos();
+  const pulso = await loadPulso();
   const tiles = [summaryFor("crm", board, approvals), summaryFor("licita", board, approvals)];
   const lastAgo = feed[0] ? timeAgo(feed[0].ts) : "—";
   const totalPend = approvals.length;
@@ -38,7 +41,9 @@ export default async function Hub() {
         </div>
       </header>
 
+      <FrotaBanner minAtras={pulso.minAtras} />
       <CriticoBanner criticos={criticos} />
+      <DirecaoSection pulso={pulso} />
 
       <div className="hub-tiles">
         {tiles.map((s) => (
