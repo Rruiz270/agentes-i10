@@ -1,10 +1,12 @@
-import { deployApproval, retryApproval } from "@/app/actions";
+import { deployApproval, retryApproval, flushBatch } from "@/app/actions";
 import type { ExecItem } from "@/lib/fleet-data";
 
 const STATE: Record<string, { label: string; cls: string; icon: string }> = {
   queued: { label: "na fila da IA", cls: "run", icon: "⏳" },
   executing: { label: "IA implementando…", cls: "run", icon: "🔨" },
   built: { label: "pronto pra revisar", cls: "built", icon: "✅" },
+  deploy_queued: { label: "no lote — aguardando", cls: "built", icon: "📦" },
+  deploy_now: { label: "lançando…", cls: "run", icon: "🚀" },
   deploying: { label: "deployando…", cls: "run", icon: "🚀" },
   done: { label: "done · deployado", cls: "done", icon: "🚀" },
   failed: { label: "falhou", cls: "fail", icon: "⚠" },
@@ -18,13 +20,23 @@ const RISCO: Record<string, { cls: string; label: string }> = {
 
 export default function ExecSection({ items }: { items: ExecItem[] }) {
   if (!items.length) return null;
+  const emLote = items.filter((i) => i.exec_status === "deploy_queued");
   return (
     <section className="ex-sec">
       <h2 className="ap-h2"><span className="ap-h2-glow" />EXECUÇÃO · a IA construindo o que você aprovou</h2>
+      {emLote.length > 0 && (
+        <div className="ex-lote">
+          <span className="ex-lote-n">📦 {emLote.length} no lote</span>
+          <span className="ex-lote-txt">lançam juntos quando você parar de aprovar (~3 min) — 1 deploy só</span>
+          <form>
+            <button className="ex-lote-btn" formAction={flushBatch}>Lançar lote agora →</button>
+          </form>
+        </div>
+      )}
       <div className="ex-list">
         {items.map((it) => {
           const s = STATE[it.exec_status] ?? STATE.queued;
-          const running = ["queued", "executing", "deploying"].includes(it.exec_status);
+          const running = ["queued", "executing", "deploying", "deploy_now"].includes(it.exec_status);
           const rev = it.exec_review;
           const risco = rev ? (RISCO[rev.risco] ?? RISCO.medio) : null;
           return (
@@ -82,11 +94,13 @@ export default function ExecSection({ items }: { items: ExecItem[] }) {
                 )}
                 {it.exec_pr && <a className="ex-link" href={it.exec_pr} target="_blank" rel="noreferrer">ver código ↗</a>}
                 {it.exec_status === "built" && (
-                  <form>
+                  <form className="ex-depform">
                     <input type="hidden" name="id" value={it.id} />
-                    <button className="ex-btn" formAction={deployApproval}>🚀 Push / Deploy</button>
+                    <button className="ex-btn" name="mode" value="now" formAction={deployApproval}>🚀 Deploy agora</button>
+                    <button className="ex-btn-alt" name="mode" value="batch" formAction={deployApproval}>📦 Somar ao lote</button>
                   </form>
                 )}
+                {it.exec_status === "deploy_queued" && <span className="ex-lotetag">📦 no lote</span>}
                 {it.exec_status === "done" && <span className="ex-doneflag">✓ no ar</span>}
               </div>
             </div>

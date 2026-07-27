@@ -108,16 +108,28 @@ export async function approveApproval(formData: FormData) {
   revalidatePath("/"); revalidatePath("/crm"); revalidatePath("/licita");
 }
 
-// Botão "Deploy" nos itens já construídos (exec_status='built') → enfileira o
-// merge do PR (o mini processa → Vercel deploya → 'done').
+// Botão "Deploy" nos itens já construídos (exec_status='built'). Dois modos:
+//  · mode='now'   → deploy_now: o mini mergeia JÁ (individual, imediato)
+//  · mode='batch' → deploy_queued: entra no lote (janela de acúmulo → 1 deploy)
+// Deploy em produção (merge do PR) = só Admin.
 export async function deployApproval(formData: FormData) {
-  // Deploy em produção (merge do PR) = só Admin.
   await requireAdmin();
   const id = Number(formData.get("id"));
   if (!id) return;
+  const alvo = String(formData.get("mode") || "now") === "batch" ? "deploy_queued" : "deploy_now";
   await sql`
-    UPDATE reserva.agent_approvals SET exec_status = 'deploy_queued', exec_updated_at = now()
+    UPDATE reserva.agent_approvals SET exec_status = ${alvo}, exec_updated_at = now()
     WHERE id = ${id} AND exec_status = 'built'
+  `;
+  revalidatePath("/"); revalidatePath("/crm"); revalidatePath("/licita");
+}
+
+// "Lançar lote agora" — tira o lote da janela de espera e manda deployar já.
+export async function flushBatch() {
+  await requireAdmin();
+  await sql`
+    UPDATE reserva.agent_approvals SET exec_status = 'deploy_now', exec_updated_at = now()
+    WHERE exec_status = 'deploy_queued'
   `;
   revalidatePath("/"); revalidatePath("/crm"); revalidatePath("/licita");
 }
