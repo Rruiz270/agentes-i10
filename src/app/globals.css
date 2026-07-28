@@ -466,6 +466,26 @@ button{font-family:inherit}
 .mk-copy:hover{background:rgba(34,211,238,.2)}
 .mk-dl{font-family:inherit;font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;cursor:pointer;border:1px solid var(--mint);background:rgba(52,229,164,.1);color:var(--mint)}
 .mk-dl:hover{background:rgba(52,229,164,.2)}
+/* calendário de sacadas */
+.mkc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 0 12px;flex-wrap:wrap}
+.mkc-nav{font-family:var(--mono);font-size:12px;color:var(--cyan);border:1px solid var(--bd);border-radius:8px;padding:6px 12px}
+.mkc-nav:hover{border-color:var(--bd2);background:rgba(34,211,238,.06);text-decoration:none}
+.mkc-title{font-size:16px;font-weight:800;text-transform:capitalize;display:flex;align-items:baseline;gap:10px}
+.mkc-count{font-family:var(--mono);font-size:11px;color:var(--faint);font-weight:400;text-transform:none}
+.mkc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.mkc-wd{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);text-align:center;padding:4px 0}
+.mkc-cell{min-height:84px;border:1px solid var(--bd);border-radius:10px;padding:7px 8px;background:rgba(120,165,235,.02);display:flex;flex-direction:column;gap:5px;overflow:hidden}
+.mkc-cell.empty{border-color:transparent;background:transparent}
+.mkc-cell.has{border-color:var(--bd2);background:linear-gradient(180deg,rgba(34,211,238,.06),rgba(52,229,164,.02))}
+.mkc-daynum{font-family:var(--mono);font-size:12px;color:var(--dim);font-weight:700}
+.mkc-cell.has .mkc-daynum{color:var(--cyan)}
+.mkc-topic{display:block;font-size:11.5px;line-height:1.35;color:var(--ink);border-radius:6px}
+.mkc-topic:hover{text-decoration:none;color:var(--cyan)}
+.mkc-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.mkc-dot.hi{background:var(--mint);box-shadow:0 0 6px var(--mint)}
+.mkc-dot.lo{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+.mkc-legend{margin-top:14px;font-size:11.5px;color:var(--faint);font-family:var(--mono)}
+@media(max-width:640px){.mkc-cell{min-height:62px}.mkc-topic{font-size:9.5px}}
 
 /* relatório do júri */
 .jr-h3{font-size:15px;font-weight:750;margin:6px 0 10px}.jr-h3 span{color:var(--dim);font-weight:400;font-size:13px}

@@ -115,6 +115,14 @@ export async function loadSacadas(limit = 90): Promise<Sacada[]> {
     FROM reserva.market_insights ORDER BY dia DESC LIMIT ${limit}
   `) as Sacada[];
 }
+export async function loadSacadaByDia(dia: string): Promise<Sacada | null> {
+  const rows = (await sql`
+    SELECT id, to_char(dia, 'YYYY-MM-DD') AS dia, manchete, numero_ancora, sacada,
+           e_dai, metodo, grafico, angulo, fonte, confianca, grafico_data
+    FROM reserva.market_insights WHERE dia = ${dia} LIMIT 1
+  `) as Sacada[];
+  return rows[0] ?? null;
+}
 
 export async function loadAll() {
   const board = (await sql`
