@@ -26,6 +26,7 @@ export default async function Hub() {
       <div className="cc-scan" aria-hidden />
       <div className="hub-topbar">
         <div className="cc-navlinks">
+          <Link className="cc-navlink" href="/mudancas">evolução</Link>
           <Link className="cc-navlink" href="/juri">júri</Link>
           <Link className="cc-navlink" href="/historico">histórico</Link>
           {isAdmin(me.role) && <Link className="cc-navlink" href="/usuarios">usuários</Link>}

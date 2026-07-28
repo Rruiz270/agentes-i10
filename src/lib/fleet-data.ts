@@ -76,6 +76,32 @@ export async function loadHistorico(limit = 200): Promise<HistItem[]> {
 export const execAtivo = (items: ExecItem[]) =>
   items.some((i) => ["queued", "executing", "deploying"].includes(i.exec_status));
 
+// ── Changelog: o que os agentes já ENTREGARAM de melhoria em cada sistema ─────
+// Só mudanças de código que foram ao ar (exec_status='done') — nunca cobrança
+// interna nem tarefa operacional (essas não têm exec_status). É o rastro vivo
+// da evolução dos sistemas: o que mudou, quando, quem aprovou, o PR.
+export type ChangeItem = {
+  id: string; projeto: string; agent: string; title: string;
+  resumo: string | null; arquivos: string[]; risco: string | null;
+  exec_pr: string | null; decided_by: string | null; shipped_at: string | null;
+};
+export async function loadChangelog(limit = 300): Promise<ChangeItem[]> {
+  const rows = (await sql`
+    SELECT id, projeto, agent, title, exec_review, exec_pr, decided_by, exec_updated_at AS shipped_at
+    FROM reserva.agent_approvals
+    WHERE exec_status = 'done'
+    ORDER BY exec_updated_at DESC NULLS LAST LIMIT ${limit}
+  `) as { id: string; projeto: string; agent: string; title: string; exec_review: ExecReview; exec_pr: string | null; decided_by: string | null; shipped_at: string | null }[];
+  return rows.map((r) => ({
+    id: r.id, projeto: r.projeto, agent: r.agent, title: r.title.replace(/^💡\s*/, ""),
+    resumo: r.exec_review?.resumo ?? null,
+    arquivos: r.exec_review?.arquivos ?? [],
+    risco: r.exec_review?.risco ?? null,
+    exec_pr: r.exec_pr, decided_by: r.decided_by, shipped_at: r.shipped_at,
+  }));
+}
+export const PROJ_LABEL: Record<string, string> = { crm: "CRM i10", licita360: "Licita360" };
+
 export async function loadAll() {
   const board = (await sql`
     SELECT DISTINCT ON (projeto, tarefa) projeto, tarefa, status, summary, host, ts
