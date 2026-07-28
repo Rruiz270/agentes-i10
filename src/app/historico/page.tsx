@@ -38,6 +38,7 @@ export default async function HistoricoPage() {
       <div className="cc-logout-bar">
         <Link className="cc-back" href="/">← projetos</Link>
         <div className="cc-navlinks">
+          <Link className="cc-navlink" href="/mercado">mercado</Link>
           <Link className="cc-navlink" href="/mudancas">evolução</Link>
           <Link className="cc-navlink" href="/juri">júri</Link>
           <Link className="cc-navlink" href="/historico">histórico</Link>

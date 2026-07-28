@@ -102,6 +102,19 @@ export async function loadChangelog(limit = 300): Promise<ChangeItem[]> {
 }
 export const PROJ_LABEL: Record<string, string> = { crm: "CRM i10", licita360: "Licita360" };
 
+// ── Inteligência de Mercado: 1 sacada/dia minerada da base + web ─────────────
+export type Sacada = {
+  id: string; dia: string; manchete: string; numero_ancora: string; sacada: string;
+  e_dai: string; metodo: string; grafico: string; angulo: string; fonte: string; confianca: string;
+};
+export async function loadSacadas(limit = 90): Promise<Sacada[]> {
+  return (await sql`
+    SELECT id, to_char(dia, 'YYYY-MM-DD') AS dia, manchete, numero_ancora, sacada,
+           e_dai, metodo, grafico, angulo, fonte, confianca
+    FROM reserva.market_insights ORDER BY dia DESC LIMIT ${limit}
+  `) as Sacada[];
+}
+
 export async function loadAll() {
   const board = (await sql`
     SELECT DISTINCT ON (projeto, tarefa) projeto, tarefa, status, summary, host, ts

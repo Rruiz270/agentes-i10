@@ -437,6 +437,33 @@ button{font-family:inherit}
 .chg-by{color:var(--mint)}
 .chg-pr{color:var(--cyan)}
 
+/* ===== Inteligência de Mercado (sacadas) ===== */
+.mk{max-width:920px;margin:0 auto}
+.mk-lead{color:var(--dim);font-size:13.5px;margin:2px 0 22px;line-height:1.6}
+.mk-list{display:flex;flex-direction:column;gap:16px}
+.mk-card{padding:18px 20px;border:1px solid var(--bd);border-radius:14px;background:linear-gradient(180deg,rgba(120,165,235,.06),rgba(120,165,235,.02))}
+.mk-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.mk-date{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.mk-conf{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px}
+.mk-conf.c-hi{color:var(--mint);background:rgba(52,229,164,.12)}
+.mk-conf.c-mid{color:var(--amber);background:rgba(255,180,84,.12)}
+.mk-conf.c-lo{color:var(--danger);background:rgba(255,93,115,.14)}
+.mk-numero{font-size:15px;font-weight:800;color:var(--cyan);line-height:1.4;letter-spacing:-.01em;margin-bottom:8px}
+.mk-manchete{margin:0 0 8px;font-size:18px;font-weight:800;line-height:1.3;color:var(--ink);text-wrap:balance}
+.mk-sacada{margin:0;font-size:13.5px;color:var(--dim);line-height:1.6}
+.mk-block{margin-top:12px;padding-left:12px;border-left:2px solid var(--bd2)}
+.mk-lbl{display:block;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--violet);margin-bottom:3px}
+.mk-block p{margin:0;font-size:13px;color:var(--dim);line-height:1.55}
+.mk-det{margin-top:12px}
+.mk-det summary{cursor:pointer;font-family:var(--mono);font-size:11.5px;color:var(--faint);user-select:none}
+.mk-det summary:hover{color:var(--cyan)}
+.mk-det-body{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.mk-det-body p{margin:0;font-size:12px;color:var(--dim);line-height:1.5}
+.mk-det-body b{color:var(--ink);font-weight:650}
+.mk-actions{margin-top:14px;display:flex;gap:10px}
+.mk-copy{font-family:inherit;font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;cursor:pointer;border:1px solid var(--cyan);background:rgba(34,211,238,.1);color:var(--cyan)}
+.mk-copy:hover{background:rgba(34,211,238,.2)}
+
 /* relatório do júri */
 .jr-h3{font-size:15px;font-weight:750;margin:6px 0 10px}.jr-h3 span{color:var(--dim);font-weight:400;font-size:13px}
 .jr-list{display:flex;flex-direction:column;gap:10px}
