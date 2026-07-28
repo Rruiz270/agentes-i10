@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
 import {
   verifyCredentials, currentUser, canSeeAgentes, canApprove, canDeployExternal,
@@ -10,6 +11,18 @@ import {
 import { createSession, destroySession } from "@/lib/session";
 
 export type LoginState = { error?: string } | undefined;
+
+// Gate simples da página de Crons (senha compartilhada, separada do login do
+// painel — pra dividir só essa visão com o time de operação).
+export const CRONS_COOKIE = "crons_ok";
+export const CRONS_TOKEN = "crons-i10-ok";
+export async function unlockCrons(formData: FormData) {
+  const pw = String(formData.get("pw") || "");
+  const alvo = process.env.CRONS_PASSWORD || "i10crons2026";
+  if (pw !== alvo) redirect("/crons?e=1");
+  (await cookies()).set(CRONS_COOKIE, CRONS_TOKEN, { httpOnly: true, path: "/", maxAge: 60 * 60 * 24 * 30 });
+  redirect("/crons");
+}
 
 export async function login(
   _prev: LoginState,

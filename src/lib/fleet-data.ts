@@ -102,6 +102,18 @@ export async function loadChangelog(limit = 300): Promise<ChangeItem[]> {
 }
 export const PROJ_LABEL: Record<string, string> = { crm: "CRM i10", licita360: "Licita360" };
 
+// ── Raio-x de crons (mini + Vercel + GitHub), agnóstico de fonte ─────────────
+export type CronRow = {
+  source: string; projeto: string; name: string; schedule: string;
+  last_run: string | null; status: string | null; detail: string | null; url: string | null; updated_at: string;
+};
+export async function loadCronStatus(): Promise<CronRow[]> {
+  return (await sql`
+    SELECT source, projeto, name, schedule, last_run, status, detail, url, updated_at
+    FROM reserva.cron_status ORDER BY projeto, source, name
+  `) as CronRow[];
+}
+
 // ── Inteligência de Mercado: 1 sacada/dia minerada da base + web ─────────────
 export type Sacada = {
   id: string; dia: string; manchete: string; numero_ancora: string; sacada: string;
