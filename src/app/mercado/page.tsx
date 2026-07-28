@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { currentUser, canSeeAgentes, isAdmin } from "@/lib/auth";
 import { logout } from "../actions";
 import { loadSacadas } from "@/lib/fleet-data";
+import { chartMarkup } from "@/lib/sacada-html";
 import CopyButton from "@/components/copy-button";
+import DownloadButton from "@/components/download-button";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +64,9 @@ export default async function MercadoPage() {
                 <div className="mk-numero">{s.numero_ancora}</div>
                 <h3 className="mk-manchete">{s.manchete}</h3>
                 <p className="mk-sacada">{s.sacada}</p>
+                {s.grafico_data?.series?.length ? (
+                  <div className="mk-chart" dangerouslySetInnerHTML={{ __html: chartMarkup(s.grafico_data) }} />
+                ) : null}
                 {s.e_dai && (
                   <div className="mk-block"><span className="mk-lbl">por que importa</span><p>{s.e_dai}</p></div>
                 )}
@@ -78,6 +83,7 @@ export default async function MercadoPage() {
                 </details>
                 <div className="mk-actions">
                   <CopyButton text={copiaTxt} />
+                  <DownloadButton sacada={{ dia: quando(s.dia), manchete: s.manchete, numero_ancora: s.numero_ancora, sacada: s.sacada, e_dai: s.e_dai, angulo: s.angulo, metodo: s.metodo, fonte: s.fonte, confianca: s.confianca, grafico_data: s.grafico_data }} />
                 </div>
               </article>
             );

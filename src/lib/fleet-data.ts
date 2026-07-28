@@ -106,11 +106,12 @@ export const PROJ_LABEL: Record<string, string> = { crm: "CRM i10", licita360: "
 export type Sacada = {
   id: string; dia: string; manchete: string; numero_ancora: string; sacada: string;
   e_dai: string; metodo: string; grafico: string; angulo: string; fonte: string; confianca: string;
+  grafico_data: import("@/lib/sacada-html").Grafico;
 };
 export async function loadSacadas(limit = 90): Promise<Sacada[]> {
   return (await sql`
     SELECT id, to_char(dia, 'YYYY-MM-DD') AS dia, manchete, numero_ancora, sacada,
-           e_dai, metodo, grafico, angulo, fonte, confianca
+           e_dai, metodo, grafico, angulo, fonte, confianca, grafico_data
     FROM reserva.market_insights ORDER BY dia DESC LIMIT ${limit}
   `) as Sacada[];
 }
@@ -258,6 +259,7 @@ export function crmUnits(board: Run[], approvals: Approval[]): Unit[] {
 
 export function licitaUnits(board: Run[], approvals: Approval[]): Unit[] {
   const ing = runOf(board, "licita360", "ingestao"), ed = runOf(board, "licita360", "editais"), sd = runOf(board, "licita360", "saude");
+  const mk = runOf(board, "licita360", "mercado-sacada");
   const p = (a: string) => pendByAgent(approvals, a);
   return [
     { key: "lic-ing", code: "IG", name: "Coleta / Ingestão", role: "Vigia o cron do PNCP", autonomy: "ATIVO",
@@ -266,18 +268,12 @@ export function licitaUnits(board: Run[], approvals: Approval[]): Unit[] {
     { key: "lic-saude", code: "DB", name: "Saúde do banco", role: "Controla o Neon do Licita360", autonomy: "ATIVO",
       state: sd?.status === "FAIL" || sd?.status === "WARN" ? "alerta" : sd ? "vigiando" : "ocioso", accent: sd?.status === "FAIL" ? "danger" : "mint",
       pending: p("Saúde do banco"), last: sd?.summary ?? "3,2M licitações", acts: ["contando o total de licitações", "medindo crescimento 24h", "checando fontes paradas", "aguardando ciclo"] },
-    { key: "lic-radar", code: "RD", name: "Radar de oportunidades", role: "Caça licitações de educação", autonomy: "APRENDIZ",
-      state: p("Radar de oportunidades") ? "aguardando" : "vigiando", accent: "mint", pending: p("Radar de oportunidades"),
-      last: "oportunidades", acts: ["varrendo 3,2M licitações", "filtrando temas i10 (FUNDEB/educação)", "medindo valor e prazo", "aguardando seu OK"] },
-    { key: "lic-prazos", code: "PZ", name: "Prazos", role: "Não perder deadline", autonomy: "APRENDIZ",
-      state: p("Prazos") ? "aguardando" : "vigiando", accent: "amber", pending: p("Prazos"),
-      last: "prazos chegando", acts: ["medindo prazos de proposta", "priorizando por urgência", "sinalizando o que fecha", "aguardando seu OK"] },
     { key: "lic-editais", code: "ED", name: "Leitura de editais", role: "IA lê o edital em PDF", autonomy: "ATIVO",
       state: ed?.status === "WARN" ? "trabalhando" : ed ? "vigiando" : "ocioso", accent: "violet", pending: p("Leitura de editais"),
       last: ed?.summary ?? "fila de análise", acts: ["contando a fila de editais", "priorizando por prazo", "extraindo objeto/exigências", "aguardando ciclo"] },
-    { key: "lic-recompras", code: "RC", name: "Recompras previsíveis", role: "Antecipa a próxima licitação", autonomy: "APRENDIZ",
-      state: p("Recompras previsíveis") ? "aguardando" : "vigiando", accent: "cyan", pending: p("Recompras previsíveis"),
-      last: "órgãos recorrentes", acts: ["mapeando compradores recorrentes", "cruzando histórico 18m", "achando janelas fechadas", "aguardando seu OK"] },
+    { key: "lic-mercado", code: "IM", name: "Inteligência de Mercado", role: "1 sacada de mercado por dia", autonomy: "ATIVO",
+      state: mk ? "trabalhando" : "ocioso", accent: "cyan", pending: 0,
+      last: mk?.summary ?? "sacadas de mercado", acts: ["minerando a base PNCP", "buscando na web", "checando os números", "destilando a sacada do dia"] },
     { key: "lic-preco", code: "PR", name: "Preço fora da curva", role: "Due diligence de preço", autonomy: "APRENDIZ",
       state: p("Preço fora da curva") ? "aguardando" : "vigiando", accent: "amber", pending: p("Preço fora da curva"),
       last: "itens vs mercado", acts: ["comparando itens vs mercado", "medindo desvio de preço", "filtrando erros de dado", "aguardando ciclo"] },
