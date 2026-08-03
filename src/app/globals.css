@@ -488,20 +488,23 @@ button{font-family:inherit}
 @media(max-width:640px){.mkc-cell{min-height:62px}.mkc-topic{font-size:9.5px}}
 
 /* ===== Agenda de Jobs (crons) ===== */
-.crn-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:6px 0 22px}
+.crn-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:6px 0 22px}
 .crn-kpi{border:1px solid var(--bd);border-radius:12px;padding:14px 16px;background:rgba(120,165,235,.03)}
 .crn-kpi b{display:block;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
 .crn-kpi span{font-size:11.5px;color:var(--dim)}
 .crn-kpi.ok b{color:var(--mint)}
 .crn-kpi.fail b{color:var(--danger)}
+.crn-kpi.warn b{color:var(--amber)}
 .crn-proj{margin:0 0 20px}
 .crn-proj-head{display:flex;align-items:baseline;gap:10px;margin:0 0 10px;padding-bottom:7px;border-bottom:1px solid var(--bd)}
 .crn-proj-head h3{margin:0;font-size:15px;font-weight:800}
 .crn-proj-n{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint)}
 .crn-badfail{color:var(--danger)}
+.crn-badwarn{color:var(--amber)}
 .crn-list{display:flex;flex-direction:column;gap:5px}
 .crn-row{display:grid;grid-template-columns:24px minmax(0,1.6fr) minmax(0,1.3fr) 96px 112px;gap:12px;align-items:center;padding:9px 12px;border:1px solid var(--bd);border-radius:9px;background:rgba(0,0,0,.15);font-size:12.5px}
 .crn-row.fail{border-color:rgba(255,93,115,.4);background:rgba(255,93,115,.05)}
+.crn-row.warn{border-color:rgba(255,180,84,.38);background:rgba(255,180,84,.05)}
 .crn-src{text-align:center}
 .crn-name{font-weight:650;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .crn-name a{color:var(--cyan)}

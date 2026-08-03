@@ -13,7 +13,13 @@ const SRC: Record<string, { icon: string; label: string }> = {
 const STATUS: Record<string, { cls: string; label: string }> = {
   ok: { cls: "ok", label: "✓ rodou ok" },
   fail: { cls: "fail", label: "⚠ falhou" },
+  // "atrasado" = a expressão do cron diz que já era pra ter rodado e não rodou.
+  // Sem isso, um job que simplesmente PAROU fica verde pra sempre no carimbo antigo.
+  atrasado: { cls: "warn", label: "⏱ atrasado" },
   unknown: { cls: "unk", label: "— sem sinal" },
+  // Cron da Vercel sem heartbeat: sabemos a agenda, não sabemos se executou.
+  // Deliberadamente NÃO conta como "rodou ok" — verde que não prova nada engana.
+  "sem-telemetria": { cls: "unk", label: "sem telemetria" },
   agendado: { cls: "sch", label: "agendado" },
   pausado: { cls: "warn", label: "pausado" },
 };
@@ -44,6 +50,8 @@ export default async function CronsPage({ searchParams }: { searchParams: Promis
   const projetos = Object.keys(byProj).sort();
   const nFail = crons.filter((c) => c.status === "fail").length;
   const nOk = crons.filter((c) => c.status === "ok").length;
+  const nAtraso = crons.filter((c) => c.status === "atrasado").length;
+  const nCego = crons.filter((c) => c.status === "sem-telemetria" || c.status === "unknown").length;
   const atualizado = crons.length ? crons.reduce((a, c) => (c.updated_at > a ? c.updated_at : a), crons[0].updated_at) : null;
 
   return (
@@ -58,10 +66,11 @@ export default async function CronsPage({ searchParams }: { searchParams: Promis
       </header>
 
       <div className="crn-kpis">
-        <div className="crn-kpi"><b>{crons.length}</b><span>jobs agendados</span></div>
+        <div className="crn-kpi"><b>{crons.length}</b><span>jobs · {projetos.length} projetos</span></div>
         <div className="crn-kpi ok"><b>{nOk}</b><span>rodaram ok</span></div>
+        <div className={`crn-kpi ${nAtraso ? "warn" : ""}`}><b>{nAtraso}</b><span>atrasados</span></div>
         <div className={`crn-kpi ${nFail ? "fail" : ""}`}><b>{nFail}</b><span>falharam</span></div>
-        <div className="crn-kpi"><b>{projetos.length}</b><span>projetos</span></div>
+        <div className="crn-kpi"><b>{nCego}</b><span>sem telemetria</span></div>
       </div>
 
       {crons.length === 0 && <div className="chg-empty">O monitor ainda não rodou. Ele varre mini + Vercel + GitHub a cada 30 min.</div>}
@@ -69,11 +78,12 @@ export default async function CronsPage({ searchParams }: { searchParams: Promis
       {projetos.map((proj) => {
         const rows = byProj[proj];
         const f = rows.filter((r) => r.status === "fail").length;
+        const a = rows.filter((r) => r.status === "atrasado").length;
         return (
           <section className="crn-proj" key={proj}>
             <div className="crn-proj-head">
               <h3>{proj}</h3>
-              <span className="crn-proj-n">{rows.length} job(s){f > 0 && <b className="crn-badfail"> · {f} com falha</b>}</span>
+              <span className="crn-proj-n">{rows.length} job(s){f > 0 && <b className="crn-badfail"> · {f} com falha</b>}{a > 0 && <b className="crn-badwarn"> · {a} atrasado(s)</b>}</span>
             </div>
             <div className="crn-list">
               {rows.map((r, i) => {
