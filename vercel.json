@@ -1,5 +1,8 @@
 {
   "redirects": [
     { "source": "/", "destination": "/agentes", "permanent": false }
+  ],
+  "crons": [
+    { "path": "/agentes/api/cron/frota-alerta", "schedule": "*/15 * * * *" }
   ]
 }
